@@ -1,81 +1,14 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace EntityFrameworkCore.Serialization
+namespace EntityFrameworkCore.Serialization.Internal
 {
-    public static class DbContextSerializerExtensions
+    public static class EntityEntryDeserializer
     {
-        public static TEntry Serialize < TEntry > ( this IDbContextSerializer < TEntry > serializer, EntityEntry entityEntry )
-        {
-            return serializer.Serialize ( entityEntry, SerializationMode.Full );
-        }
-
-        public static TEntry SerializeChanges < TEntry > ( this IDbContextSerializer < TEntry > serializer, EntityEntry entityEntry )
-        {
-            return serializer.Serialize ( entityEntry, SerializationMode.Changes );
-        }
-
-        public static TEntry SerializeDatabaseGeneratedValues < TEntry > ( this IDbContextSerializer < TEntry > serializer, EntityEntry entityEntry, EntityState originalState )
-        {
-            switch ( originalState )
-            {
-                case EntityState.Added : return serializer.Serialize ( entityEntry, SerializationMode.GeneratedValuesOnAdd );
-                case EntityState.Modified : return serializer.Serialize ( entityEntry, SerializationMode.GeneratedValuesOnUpdate );
-                default : throw new ArgumentOutOfRangeException ( );
-            }
-        }
-
-        private enum SerializationMode
-        {
-            Full,
-            Changes,
-            GeneratedValuesOnAdd,
-            GeneratedValuesOnUpdate
-        }
-
-        private static TEntry Serialize < TEntry > ( this IDbContextSerializer < TEntry > serializer, EntityEntry entityEntry, SerializationMode mode )
-        {
-            var entry = serializer.CreateEntry ( );
-
-            serializer.WriteEntityType ( entry, entityEntry.Metadata );
-            serializer.WriteEntityState ( entry, entityEntry.State );
-
-            // TODO: Something to cache this...
-            var allProps = entityEntry.Properties.ToList ( );
-            var full = mode == SerializationMode.Full && entityEntry.State != EntityState.Deleted || entityEntry.State == EntityState.Added;
-            var props = full ? allProps : allProps.Where ( p => p.Metadata.IsPrimaryKey ( ) ||
-                                                                p.Metadata.IsConcurrencyToken )
-                                                  .ToList ( );
-
-            var pp     = props.Select ( p => p.Metadata      ).ToArray ( );
-            var values = props.Select ( p => p.OriginalValue ).ToArray ( );
-
-            serializer.WriteProperties ( entry, pp, values );
-
-            var modifiedProperties = mode == SerializationMode.Full ||
-                                     mode == SerializationMode.Changes ? allProps.Where ( p => p.IsModified ).ToList ( ) :
-                                     mode == SerializationMode.GeneratedValuesOnAdd ? allProps.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) ).ToList ( ) :
-                                     mode == SerializationMode.GeneratedValuesOnUpdate ? allProps.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnUpdate ) ).ToList ( ) :
-                                     throw new ArgumentOutOfRangeException ( );
-
-            serializer.WriteModifiedProperties ( entry, modifiedProperties.Select ( p => p.Metadata     ).ToArray ( ),
-                                                        modifiedProperties.Select ( p => p.CurrentValue ).ToArray ( ) );
-
-            if ( full )
-            {
-                var loadedCollections = entityEntry.Collections.Where ( c => c.IsLoaded ).ToArray ( );
-
-                serializer.WriteLoadedCollections ( entry, loadedCollections.Select ( c => c.Metadata ).ToArray ( ) );
-            }
-
-            return entry;
-        }
-
         public static void DeserializeProperties < TEntry > ( this IDbContextSerializer < TEntry > serializer, TEntry entry, EntityEntry entityEntry )
         {
             // TODO: Something to cache this...

@@ -1,20 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 
-namespace EntityFrameworkCore.Serialization.Compact
+namespace EntityFrameworkCore.Serialization.Dictionary
 {
     [ DebuggerDisplay ( "{DebuggerDisplay(),nq}" ), Serializable ]
-    public class CompactEntry
+    public class Entry
     {
         public string      EntityType  { get; set; }
         public EntityState EntityState { get; set; }
 
-        public CompactPropertyEntry [ ] Properties         { get; set; }
-        public CompactPropertyEntry [ ] ModifiedProperties { get; set; }
-        public int                  [ ] LoadedCollections  { get; set; }
+        public Dictionary < string, object > Properties         { get; set; }
+        public Dictionary < string, object > ModifiedProperties { get; set; }
+        public string [ ]                    LoadedCollections  { get; set; }
 
         private string DebuggerDisplay ( ) => $"{ EntityType } ({ EntityState }): { string.Join ( ", ", Properties.Select ( property => property.Value ) ) }";
     }

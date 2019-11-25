@@ -13,24 +13,21 @@ namespace EntityFrameworkCore.Serialization.Compact
 
         public EntityState ReadEntityState ( CompactEntry entry )               => entry.EntityState;
         public IEntityType ReadEntityType  ( CompactEntry entry, IModel model ) => model.GetEntityTypes ( )
-                                                                                                 .FirstOrDefault ( entityType => entry.EntityType == entityType.ShortName ( ) );
+                                                                                        .FirstOrDefault ( entityType => entry.EntityType == entityType.ShortName ( ) );
 
         public object [ ]? ReadProperties         ( CompactEntry entry, IProperty [ ] properties ) => Read ( properties, entry.Properties );
         public object [ ]? ReadModifiedProperties ( CompactEntry entry, IEntityType entityType, out IProperty [ ] properties )
         {
-            properties = entry.ModifiedProperties
-                              .Select  ( modifiedProperty => entityType.GetProperties  ( )
-                                                                       .FirstOrDefault ( property => modifiedProperty.Index == property.GetIndex ( ) ) )
-                              .ToArray ( );
+            properties = entry.ModifiedProperties?.Select  ( modifiedProperty => entityType.GetProperties ( ).FirstOrDefault ( property => modifiedProperty.Index == property.GetIndex ( ) ) )
+                                                  .ToArray ( );
 
             return Read ( properties, entry.ModifiedProperties );
         }
 
         public void ReadLoadedCollections ( CompactEntry entry, IEntityType entityType, out INavigation [ ] collections )
         {
-            collections = entry.LoadedCollections
-                              ?.Select  ( collection => entityType.GetNavigations ( ).FirstOrDefault ( navigation => navigation.GetIndex ( ) == collection ) )
-                               .ToArray ( );
+            collections = entry.LoadedCollections?.Select  ( collection => entityType.GetNavigations ( ).FirstOrDefault ( navigation => navigation.GetIndex ( ) == collection ) )
+                                                  .ToArray ( );
         }
 
         public void WriteEntityState ( CompactEntry entry, EntityState entityState ) => entry.EntityState = entityState;
@@ -40,7 +37,7 @@ namespace EntityFrameworkCore.Serialization.Compact
         public void WriteModifiedProperties ( CompactEntry entry, IProperty [ ] properties, object [ ] values ) => entry.ModifiedProperties = Write ( properties, values );
 
         public void WriteLoadedCollections ( CompactEntry entry, INavigation [ ] collections ) => entry.LoadedCollections = collections.Select  ( collection => collection.GetIndex ( ) )
-                                                                                                                                                .ToArray ( );
+                                                                                                                                       .ToArray ( );
 
         private static object [ ]? Read ( IProperty [ ] properties, CompactPropertyEntry [ ] entries )
         {

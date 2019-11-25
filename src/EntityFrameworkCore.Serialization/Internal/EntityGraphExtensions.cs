@@ -8,12 +8,12 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace EntityFrameworkCore.Serialization
+namespace EntityFrameworkCore.Serialization.Internal
 {
     /// <summary>
     /// DbContext entity graph extension methods
     /// </summary>
-    public static class DbContextEntityGraphExtensions
+    public static class EntityGraphExtensions
     {
         /// <summary>
         /// Traverse an entity graph executing a callback on each node.

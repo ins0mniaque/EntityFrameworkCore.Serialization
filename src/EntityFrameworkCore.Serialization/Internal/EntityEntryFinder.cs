@@ -10,18 +10,18 @@ namespace EntityFrameworkCore.Serialization.Internal
 {
     public class EntityEntryFinder < TEntry >
     {
-        public EntityEntryFinder ( ChangeTracker changeTracker, IDbContextSerializer < TEntry > serializer )
+        public EntityEntryFinder ( DbContext context, IDbContextSerializer < TEntry > serializer )
         {
-            ChangeTracker = changeTracker;
-            Entries       = changeTracker.Entries ( ).ToLookup ( entry => entry.Metadata );
-            Serializer    = serializer;
+            Context    = context;
+            Entries    = context.ChangeTracker.Entries ( ).ToLookup ( entry => entry.Metadata );
+            Serializer = serializer;
         }
 
         public EntityEntry FindOrCreate ( TEntry entry ) => Find ( entry ) ?? Create ( entry );
 
         public EntityEntry Find ( TEntry entry )
         {
-            var entityType = Serializer.ReadEntityType ( entry, ChangeTracker.Context.Model );
+            var entityType = Serializer.ReadEntityType ( entry, Context.Model );
 
             // TODO: Something to cache this...
             var primaryKeyProperties = entityType.GetProperties ( )
@@ -35,7 +35,7 @@ namespace EntityFrameworkCore.Serialization.Internal
                 {
                     var property = e.Property ( primaryKeyProperties [ index ].Name );
 
-                    return property.Metadata.AreEquals ( property.CurrentValue, value );
+                    return PropertyEquals ( property.Metadata, property.CurrentValue, value );
                 } ).All ( isEqual => isEqual );
             } );
 
@@ -44,16 +44,24 @@ namespace EntityFrameworkCore.Serialization.Internal
 
         public EntityEntry Create ( TEntry entry )
         {
-            var entityType  = Serializer.ReadEntityType ( entry, ChangeTracker.Context.Model );
-            var entityEntry = ChangeTracker.Context.Entry ( Activator.CreateInstance ( entityType.ClrType ) );
+            var entityType  = Serializer.ReadEntityType ( entry, Context.Model );
+            var entityEntry = Context.Entry ( Activator.CreateInstance ( entityType.ClrType ) );
 
             // TODO: Move setting the primary key and concurrency token here...
 
             return entityEntry;
         }
 
-        private ChangeTracker                        ChangeTracker { get; }
-        private ILookup < IEntityType, EntityEntry > Entries       { get; }
-        private IDbContextSerializer < TEntry >      Serializer    { get; }
+        private DbContext                            Context    { get; }
+        private ILookup < IEntityType, EntityEntry > Entries    { get; }
+        private IDbContextSerializer < TEntry >      Serializer { get; }
+
+        private static bool PropertyEquals ( IProperty property, object left, object right )
+        {
+            var comparer = property.GetStructuralValueComparer ( );
+
+            return comparer != null ? comparer.Equals ( left, right ) :
+                                      object  .Equals ( left, right );
+        }
     }
 }
