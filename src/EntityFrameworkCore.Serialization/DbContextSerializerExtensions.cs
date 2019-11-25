@@ -46,33 +46,27 @@ namespace EntityFrameworkCore.Serialization
             serializer.WriteEntityState ( entry, entityEntry.State );
 
             // TODO: Something to cache this...
-            var props = entityEntry.Properties.ToList ( );
+            var allProps = entityEntry.Properties.ToList ( );
+            var full = mode == SerializationMode.Full && entityEntry.State != EntityState.Deleted || entityEntry.State == EntityState.Added;
+            var props = full ? allProps : allProps.Where ( p => p.Metadata.IsPrimaryKey ( ) ||
+                                                                p.Metadata.IsConcurrencyToken )
+                                                  .ToList ( );
 
-            var primaryKeyProperties       = props.Where ( p => p.Metadata.IsPrimaryKey ( )   ).ToArray ( );
-            var concurrencyTokenProperties = props.Where ( p => p.Metadata.IsConcurrencyToken ).ToArray ( );
-            var otherProperties            = props.Where ( p => ! p.Metadata.IsConcurrencyToken &&
-                                                                ! p.Metadata.IsPrimaryKey ( ) ).ToArray ( );
+            var pp     = props.Select ( p => p.Metadata      ).ToArray ( );
+            var values = props.Select ( p => p.OriginalValue ).ToArray ( );
 
-            serializer.WritePrimaryKey ( entry, primaryKeyProperties.Select ( p => p.Metadata     ).ToArray ( ),
-                                                primaryKeyProperties.Select ( p => p.CurrentValue ).ToArray ( ) );
-
-            serializer.WriteConcurrencyToken ( entry, concurrencyTokenProperties.Select ( p => p.Metadata      ).ToArray ( ),
-                                                      concurrencyTokenProperties.Select ( p => p.OriginalValue ).ToArray ( ) );
-
-            if ( mode == SerializationMode.Full ) // TODO: || entityEntry.State == EntityState.Deleted ?
-                serializer.WriteProperties ( entry, otherProperties.Select ( p => p.Metadata      ).ToArray ( ),
-                                                    otherProperties.Select ( p => p.OriginalValue ).ToArray ( ) );
+            serializer.WriteProperties ( entry, pp, values );
 
             var modifiedProperties = mode == SerializationMode.Full ||
-                                     mode == SerializationMode.Changes ? props.Where ( p => p.IsModified ).ToArray ( ) :
-                                     mode == SerializationMode.GeneratedValuesOnAdd ? props.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) ).ToArray ( ) :
-                                     mode == SerializationMode.GeneratedValuesOnUpdate ? props.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnUpdate ) ).ToArray ( ) :
+                                     mode == SerializationMode.Changes ? allProps.Where ( p => p.IsModified ).ToList ( ) :
+                                     mode == SerializationMode.GeneratedValuesOnAdd ? allProps.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) ).ToList ( ) :
+                                     mode == SerializationMode.GeneratedValuesOnUpdate ? allProps.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnUpdate ) ).ToList ( ) :
                                      throw new ArgumentOutOfRangeException ( );
 
             serializer.WriteModifiedProperties ( entry, modifiedProperties.Select ( p => p.Metadata     ).ToArray ( ),
                                                         modifiedProperties.Select ( p => p.CurrentValue ).ToArray ( ) );
 
-            if ( mode == SerializationMode.Full )
+            if ( full )
             {
                 var loadedCollections = entityEntry.Collections.Where ( c => c.IsLoaded ).ToArray ( );
 
@@ -82,63 +76,33 @@ namespace EntityFrameworkCore.Serialization
             return entry;
         }
 
-        public static void Deserialize < TEntry > ( this IDbContextSerializer < TEntry > serializer, TEntry entry, EntityEntry entityEntry )
+        public static void DeserializeProperties < TEntry > ( this IDbContextSerializer < TEntry > serializer, TEntry entry, EntityEntry entityEntry )
         {
             // TODO: Something to cache this...
             var props = entityEntry.Properties.ToList ( );
 
-            var primaryKeyProperties       = props.Where ( p => p.Metadata.IsPrimaryKey ( )   ).ToArray ( );
-            var concurrencyTokenProperties = props.Where ( p => p.Metadata.IsConcurrencyToken ).ToArray ( );
-            var otherProperties            = props.Where ( p => ! p.Metadata.IsConcurrencyToken &&
-                                                                ! p.Metadata.IsPrimaryKey ( ) ).ToArray ( );
-
             var state = serializer.ReadEntityState ( entry );
 
-            var primaryKey = serializer.ReadPrimaryKey ( entry, primaryKeyProperties.Select ( p => p.Metadata ).ToArray ( ) );
-
-            if ( primaryKey != null )
-            {
-                var index = 0;
-                foreach ( var value in primaryKey )
-                {
-                    var property = primaryKeyProperties [ index++ ];
-
-                    property.OriginalValue = value;
-                    property.CurrentValue  = value;
-
-                    if ( state == EntityState.Added && property.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) )
-                        property.IsTemporary = true;
-                }
-            }
-
-            var concurrencyToken = serializer.ReadConcurrencyToken ( entry, concurrencyTokenProperties.Select ( p => p.Metadata ).ToArray ( ) );
-
-            if ( concurrencyToken != null )
-            {
-                var index = 0;
-                foreach ( var value in concurrencyToken )
-                {
-                    var property = concurrencyTokenProperties [ index++ ];
-
-                    property.OriginalValue = value;
-                    property.CurrentValue  = value;
-
-                    // TODO: Check original version...
-                }
-            }
-
-            var properties = serializer.ReadProperties ( entry, otherProperties.Select ( p => p.Metadata ).ToArray ( ) );
+            var properties = serializer.ReadProperties ( entry, props.Select ( p => p.Metadata ).ToArray ( ) );
 
             if ( properties != null )
             {
                 var index = 0;
                 foreach ( var value in properties )
                 {
-                    var property = otherProperties [ index++ ];
+                    var property = props [ index++ ];
+
+                    if ( property.Metadata.IsConcurrencyToken )
+                    {
+                        // TODO: Check original version...
+                    }
 
                     property.OriginalValue = value;
                     property.CurrentValue  = value;
                     property.IsModified    = false;
+
+                    if ( property.Metadata.IsPrimaryKey ( ) && state == EntityState.Added && property.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) )
+                        property.IsTemporary = true;
                 }
             }
         }
@@ -198,6 +162,21 @@ namespace EntityFrameworkCore.Serialization
                     }
                 }
             }
+        }
+
+        public static void DeserializeEntityState < TEntry > ( this IDbContextSerializer < TEntry > serializer, TEntry entry, EntityEntry entityEntry )
+        {
+            var state = serializer.ReadEntityState ( entry );
+
+            if ( state == EntityState.Modified )
+            {
+                var modified = entityEntry.Properties.Where ( property => property.IsModified ).ToHashSet ( );
+                entityEntry.State = state;
+                foreach ( var property in entityEntry.Properties )
+                    property.IsModified = modified.Contains ( property );
+            }
+            else
+                entityEntry.State = state;
         }
     }
 }

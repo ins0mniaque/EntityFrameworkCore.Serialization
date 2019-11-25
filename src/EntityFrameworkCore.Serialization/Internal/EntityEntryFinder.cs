@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace EntityFrameworkCore.Serialization
+namespace EntityFrameworkCore.Serialization.Internal
 {
     public class EntityEntryFinder < TEntry >
     {
@@ -28,7 +28,7 @@ namespace EntityFrameworkCore.Serialization
                                                  .Where ( p => p.IsPrimaryKey ( ) )
                                                  .ToArray ( );
 
-            var primaryKey  = Serializer.ReadPrimaryKey ( entry, primaryKeyProperties );
+            var primaryKey  = Serializer.ReadProperties ( entry, primaryKeyProperties );
             var entityEntry = Entries [ entityType ].FirstOrDefault ( e =>
             {
                 return primaryKey.Select ( (value, index) =>
