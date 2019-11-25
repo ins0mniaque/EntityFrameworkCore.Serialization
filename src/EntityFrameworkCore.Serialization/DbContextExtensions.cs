@@ -50,9 +50,6 @@ namespace EntityFrameworkCore.Serialization
                                 .ToList ( );
 
             foreach ( var pair in pairs )
-                pair.EntityEntry.State = EntityState.Detached;
-
-            foreach ( var pair in pairs )
                 serializer.Deserialize ( pair.Entry, pair.EntityEntry );
 
             foreach ( var pair in pairs )
@@ -60,30 +57,55 @@ namespace EntityFrameworkCore.Serialization
 
             foreach ( var pair in pairs )
                 serializer.DeserializeModifiedProperties ( pair.Entry, pair.EntityEntry );
+
+            foreach ( var pair in pairs )
+                serializer.DeserializeLoadedCollections ( pair.Entry, pair.EntityEntry );
         }
 
-        public static IEnumerable < TEntry > SaveChangesAndSerializeGeneratedValues < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer )
+        public static int SaveChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, out IEnumerable < TEntry > databaseGeneratedValues )
         {
-            var snapshot = context.SnapshotGeneratedValues ( serializer );
+            var snapshot = context.ChangeTracker.Entries ()
+                                  .Where ( HasGeneratedValues )
+                                  .Select ( e => new { Entry= e,
+                                                       State = e.State,
+                                                       PK = new { Properties = e.Properties.Where ( p => p.Metadata.IsPrimaryKey ( ) ).Select ( p => p.Metadata ).ToArray ( ),
+                                                                  Values = e.Properties.Where ( p => p.Metadata.IsPrimaryKey ( ) ).Select ( p => p.CurrentValue ).ToArray ( ) },
+                                                       CT = new { Properties = e.Properties.Where ( p => p.Metadata.IsConcurrencyToken ).Select ( p => p.Metadata ).ToArray ( ),
+                                                                  Values = e.Properties.Where ( p => p.Metadata.IsConcurrencyToken ).Select ( p => p.CurrentValue ).ToArray ( ) } } )
+                                  .ToList ( );
 
-            context.SaveChanges ( );
+            var rowCount = context.SaveChanges ( );
 
-            return context.SerializeGeneratedValues ( snapshot, serializer );
+            databaseGeneratedValues = snapshot.Select ( en =>
+            {
+                var x = serializer.SerializeDatabaseGeneratedValues ( en.Entry, en.State );
+
+                serializer.WritePrimaryKey ( x, en.PK.Properties, en.PK.Values );
+                serializer.WriteConcurrencyToken ( x, en.CT.Properties, en.CT.Values );
+
+                return x;
+            } );
+
+            return rowCount;
         }
 
-        public static IEnumerable < TEntry > SnapshotGeneratedValues < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer )
+        public static void AcceptChanges < TEntry > ( this DbContext context, IEnumerable < TEntry > databaseGeneratedValues, IDbContextSerializer < TEntry > serializer )
         {
-            throw new NotImplementedException ( );
+            var finder = new EntityEntryFinder < TEntry > ( context.ChangeTracker, serializer );
+            var pairs  = databaseGeneratedValues.Select ( entry => new { Entry       = entry,
+                                                                         EntityEntry = finder.Find ( entry ) } )
+                                .ToList ( );
+
+            foreach ( var pair in pairs )
+                serializer.DeserializeGeneratedValues ( pair.Entry, pair.EntityEntry );
+
+            context.ChangeTracker.AcceptAllChanges ( );
         }
 
-        public static IEnumerable < TEntry > SerializeGeneratedValues < TEntry > ( this DbContext context, IEnumerable < TEntry > snapshot, IDbContextSerializer < TEntry > serializer )
+        private static bool HasGeneratedValues ( EntityEntry entityEntry )
         {
-            throw new NotImplementedException ( );
-        }
-
-        public static void LoadNavigationFromCache ( this DbContext context )
-        {
-            throw new NotImplementedException ( );
+            return entityEntry.State == EntityState.Added && entityEntry.Metadata.GetProperties().Any(p=>p.ValueGenerated.HasFlag(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAdd)) ||
+                entityEntry.State == EntityState.Modified && entityEntry.Metadata.GetProperties().Any(p=>p.ValueGenerated.HasFlag(Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnUpdate));
         }
 
         private static List < EntityEntry > GraphEntries ( this DbContext dbContext, object item )

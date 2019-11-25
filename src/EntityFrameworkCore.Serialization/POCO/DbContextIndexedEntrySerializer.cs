@@ -28,6 +28,13 @@ namespace EntityFrameworkCore.Serialization.POCO
             return Read ( properties, entry.ModifiedProperties );
         }
 
+        public void ReadLoadedCollections ( DbContextIndexedEntry entry, IEntityType entityType, out INavigation [ ] collections )
+        {
+            collections = entry.LoadedCollections
+                              ?.Select  ( collection => entityType.GetNavigations ( ).FirstOrDefault ( navigation => navigation.GetIndex ( ) == collection ) )
+                               .ToArray ( );
+        }
+
         public void WriteEntityState ( DbContextIndexedEntry entry, EntityState entityState ) => entry.EntityState = entityState;
         public void WriteEntityType  ( DbContextIndexedEntry entry, IEntityType entityType  ) => entry.EntityType  = entityType.ShortName ( );
 
@@ -35,6 +42,9 @@ namespace EntityFrameworkCore.Serialization.POCO
         public void WriteConcurrencyToken   ( DbContextIndexedEntry entry, IProperty [ ] properties, object [ ] values ) => entry.ConcurrencyToken   = Write ( properties, values );
         public void WriteProperties         ( DbContextIndexedEntry entry, IProperty [ ] properties, object [ ] values ) => entry.Properties         = Write ( properties, values );
         public void WriteModifiedProperties ( DbContextIndexedEntry entry, IProperty [ ] properties, object [ ] values ) => entry.ModifiedProperties = Write ( properties, values );
+
+        public void WriteLoadedCollections ( DbContextIndexedEntry entry, INavigation [ ] collections ) => entry.LoadedCollections = collections.Select  ( collection => collection.GetIndex ( ) )
+                                                                                                                                                .ToArray ( );
 
         private static object [ ]? Read ( IProperty [ ] properties, IndexedPropertyEntry [ ] entries )
         {

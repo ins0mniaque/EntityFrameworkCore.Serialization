@@ -25,6 +25,12 @@ namespace EntityFrameworkCore.Serialization.POCO
 
             return Read ( properties, entry.ModifiedProperties );
         }
+        public void ReadLoadedCollections ( DbContextEntry entry, IEntityType entityType, out INavigation [ ] collections )
+        {
+            collections = entry.LoadedCollections
+                               .Select  ( collection => entityType.FindNavigation ( collection ) )
+                               .ToArray ( );
+        }
 
         public void WriteEntityState ( DbContextEntry entry, EntityState entityState ) => entry.EntityState = entityState;
         public void WriteEntityType  ( DbContextEntry entry, IEntityType entityType  ) => entry.EntityType  = entityType.Name;
@@ -33,6 +39,9 @@ namespace EntityFrameworkCore.Serialization.POCO
         public void WriteConcurrencyToken   ( DbContextEntry entry, IProperty [ ] properties, object [ ] values ) => entry.ConcurrencyToken   = Write ( properties, values );
         public void WriteProperties         ( DbContextEntry entry, IProperty [ ] properties, object [ ] values ) => entry.Properties         = Write ( properties, values );
         public void WriteModifiedProperties ( DbContextEntry entry, IProperty [ ] properties, object [ ] values ) => entry.ModifiedProperties = Write ( properties, values );
+
+        public void WriteLoadedCollections ( DbContextEntry entry, INavigation [ ] collections ) => entry.LoadedCollections = collections.Select  ( collection => collection.Name )
+                                                                                                                                         .ToArray ( );
 
         private static object [ ]? Read ( IProperty [ ] properties, PropertyEntry [ ] entries )
         {

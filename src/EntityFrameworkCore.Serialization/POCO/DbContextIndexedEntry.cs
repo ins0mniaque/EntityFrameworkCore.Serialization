@@ -16,6 +16,7 @@ namespace EntityFrameworkCore.Serialization.POCO
         public IndexedPropertyEntry [ ] ConcurrencyToken   { get; set; }
         public IndexedPropertyEntry [ ] Properties         { get; set; }
         public IndexedPropertyEntry [ ] ModifiedProperties { get; set; }
+        public int                  [ ] LoadedCollections  { get; set; }
 
         private string DebuggerDisplay ( ) => $"{ EntityType } ({ EntityState }): { string.Join ( ", ", PrimaryKey.Select ( pk => pk.Value ) ) }";
     }

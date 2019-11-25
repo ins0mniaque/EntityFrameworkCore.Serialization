@@ -17,7 +17,9 @@ namespace EntityFrameworkCore.Serialization
             Serializer    = serializer;
         }
 
-        public EntityEntry FindOrCreate ( TEntry entry )
+        public EntityEntry FindOrCreate ( TEntry entry ) => Find ( entry ) ?? Create ( entry );
+
+        public EntityEntry Find ( TEntry entry )
         {
             var entityType = Serializer.ReadEntityType ( entry, ChangeTracker.Context.Model );
 
@@ -32,19 +34,20 @@ namespace EntityFrameworkCore.Serialization
                 return primaryKey.Select ( (value, index) =>
                 {
                     var property = e.Property ( primaryKeyProperties [ index ].Name );
-                    var comparer = property.Metadata.GetStructuralValueComparer ( );
 
-                    return comparer != null ? comparer.Equals ( property.CurrentValue, value ) :
-                                              object  .Equals ( property.CurrentValue, value );
+                    return property.Metadata.AreEquals ( property.CurrentValue, value );
                 } ).All ( isEqual => isEqual );
             } );
 
-            if ( entityEntry == null )
-            {
-                entityEntry = ChangeTracker.Context.Entry ( Activator.CreateInstance ( entityType.ClrType ) );
+            return entityEntry;
+        }
 
-                // TODO: Move setting the primary key and concurrency token here...
-            }
+        public EntityEntry Create ( TEntry entry )
+        {
+            var entityType  = Serializer.ReadEntityType ( entry, ChangeTracker.Context.Model );
+            var entityEntry = ChangeTracker.Context.Entry ( Activator.CreateInstance ( entityType.ClrType ) );
+
+            // TODO: Move setting the primary key and concurrency token here...
 
             return entityEntry;
         }
