@@ -25,7 +25,15 @@ namespace EntityFrameworkCore.Serialization
             if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
             if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
 
-            return context.GraphEntries ( item ).Select ( serializer.Serialize );
+            return context.Graph ( item ).Select ( serializer.Serialize );
+        }
+
+        public static IEnumerable < TEntry > SerializeGraph < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, params object [ ] items )
+        {
+            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
+            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
+
+            return context.Graph ( items ).Select ( serializer.Serialize );
         }
 
         public static IEnumerable < TEntry > SerializeChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer )
@@ -41,13 +49,28 @@ namespace EntityFrameworkCore.Serialization
             if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
             if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
 
-            return context.GraphEntries ( item ).Where ( IsChanged ).Select ( serializer.SerializeChanges );
+            return context.Graph ( item ).Where ( IsChanged ).Select ( serializer.SerializeChanges );
         }
 
-        private static List < EntityEntry > GraphEntries ( this DbContext dbContext, object item )
+        public static IEnumerable < TEntry > SerializeGraphChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, params object [ ] items )
+        {
+            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
+            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
+
+            return context.Graph ( items ).Where ( IsChanged ).Select ( serializer.SerializeChanges );
+        }
+
+        private static List < EntityEntry > Graph ( this DbContext dbContext, object item )
         {
             var entries = new List < EntityEntry > ( );
             dbContext.TraverseGraph ( item, node => entries.Add ( node.Entry ) );
+            return entries;
+        }
+
+        private static List < EntityEntry > Graph ( this DbContext dbContext, IEnumerable < object > items )
+        {
+            var entries = new List < EntityEntry > ( );
+            dbContext.TraverseGraph ( items, node => entries.Add ( node.Entry ) );
             return entries;
         }
 
