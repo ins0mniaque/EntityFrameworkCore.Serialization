@@ -10,7 +10,7 @@ namespace EntityFrameworkCore.Serialization
 {
     public static class Deserializer
     {
-        public static void Deserialize < TEntry > ( this DbContext context, IEnumerable < TEntry > entries, IDbContextSerializer < TEntry > serializer )
+        public static void Deserialize < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, IEnumerable < TEntry > entries )
         {
             var finder = new EntityEntryFinder < TEntry > ( context, serializer );
             var pairs  = entries.Select ( entry => new { Entry       = entry,
