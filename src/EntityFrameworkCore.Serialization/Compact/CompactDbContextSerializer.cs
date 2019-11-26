@@ -15,43 +15,55 @@ namespace EntityFrameworkCore.Serialization.Compact
         public IEntityType ReadEntityType  ( CompactEntry entry, IModel model ) => model.GetEntityTypes ( )
                                                                                         .FirstOrDefault ( entityType => entry.EntityType == entityType.ShortName ( ) );
 
-        public object [ ]? ReadProperties         ( CompactEntry entry, IProperty [ ] properties ) => Read ( properties, entry.Properties );
-        public object [ ]? ReadModifiedProperties ( CompactEntry entry, IEntityType entityType, out IProperty [ ] properties )
+        public object [ ]? ReadProperties ( CompactEntry entry, IEntityType entityType, out IProperty [ ] properties )
         {
-            properties = entry.ModifiedProperties?.Select  ( modifiedProperty => entityType.GetProperties ( ).FirstOrDefault ( property => modifiedProperty.Index == property.GetIndex ( ) ) )
-                                                  .ToArray ( );
-
-            return Read ( properties, entry.ModifiedProperties );
+            return Read ( entry.Properties, entityType, out properties );
         }
 
-        public void ReadLoadedCollections ( CompactEntry entry, IEntityType entityType, out INavigation [ ] collections )
+        public object [ ]? ReadModifiedProperties ( CompactEntry entry, IEntityType entityType, out IProperty [ ] properties )
         {
-            collections = entry.LoadedCollections?.Select  ( collection => entityType.GetNavigations ( ).FirstOrDefault ( navigation => navigation.GetIndex ( ) == collection ) )
-                                                  .ToArray ( );
+            return Read ( entry.ModifiedProperties, entityType, out properties );
+        }
+
+        public void ReadNavigationState ( CompactEntry entry, IEntityType entityType, out INavigation [ ] navigated )
+        {
+            navigated = entry.NavigationState?.Select  ( index => Find ( entityType.GetNavigations ( ), index ) )
+                                              .ToArray ( );
         }
 
         public void WriteEntityState ( CompactEntry entry, EntityState entityState ) => entry.EntityState = entityState;
         public void WriteEntityType  ( CompactEntry entry, IEntityType entityType  ) => entry.EntityType  = entityType.ShortName ( );
 
-        public void WriteProperties         ( CompactEntry entry, IProperty [ ] properties, object [ ] values ) => entry.Properties         = Write ( properties, values );
-        public void WriteModifiedProperties ( CompactEntry entry, IProperty [ ] properties, object [ ] values ) => entry.ModifiedProperties = Write ( properties, values );
-
-        public void WriteLoadedCollections ( CompactEntry entry, INavigation [ ] collections ) => entry.LoadedCollections = collections.Select  ( collection => collection.GetIndex ( ) )
-                                                                                                                                       .ToArray ( );
-
-        private static object [ ]? Read ( IProperty [ ] properties, CompactPropertyEntry [ ] entries )
+        public void WriteProperties ( CompactEntry entry, IProperty [ ] properties, object [ ] values )
         {
+            entry.Properties = Write ( properties, values );
+        }
+
+        public void WriteModifiedProperties ( CompactEntry entry, IProperty [ ] properties, object [ ] values )
+        {
+            entry.ModifiedProperties = Write ( properties, values );
+        }
+
+        public void WriteNavigationState ( CompactEntry entry, INavigation [ ] navigated )
+        {
+            entry.NavigationState = navigated.Select  ( collection => collection.GetIndex ( ) )
+                                             .ToArray ( );
+        }
+
+        private static T Find < T > ( System.Collections.Generic.IEnumerable < T > properties, int index ) where T : IPropertyBase
+        {
+            return properties.FirstOrDefault ( property => index == property.GetIndex ( ) );
+        }
+
+        private static object [ ]? Read ( CompactPropertyEntry [ ] entries, IEntityType entityType, out IProperty [ ] properties )
+        {
+            properties = entries?.Select  ( entry => Find ( entityType.GetProperties ( ), entry.Index ) )
+                                 .ToArray ( );
+
             if ( entries == null )
                 return null;
 
-            return properties.Zip ( entries, (property, entry) =>
-            {
-                var propertyIndex = property.GetIndex ( );
-                if ( entry.Index == propertyIndex )
-                    return entry.Value;
-
-                return entries.Single ( otherEntry => otherEntry.Index == propertyIndex ).Value;
-            } ).ToArray ( );
+            return entries.Select ( entry => entry.Value ).ToArray ( );
         }
 
         private static CompactPropertyEntry [ ] Write ( IProperty [ ] properties, object [ ] values )

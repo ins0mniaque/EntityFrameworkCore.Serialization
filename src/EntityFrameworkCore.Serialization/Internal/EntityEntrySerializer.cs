@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 
@@ -26,7 +27,7 @@ namespace EntityFrameworkCore.Serialization.Internal
             {
                 case EntityState.Added    : return serializer.Serialize ( entityEntry, SerializationMode.ValuesGeneratedOnAdd    );
                 case EntityState.Modified : return serializer.Serialize ( entityEntry, SerializationMode.ValuesGeneratedOnUpdate );
-                default                   : throw new ArgumentOutOfRangeException ( );
+                default                   : throw new ArgumentOutOfRangeException ( nameof ( originalState ), "Original state must be EntityState.Added or EntityState.Modified" );
             }
         }
 
@@ -49,17 +50,20 @@ namespace EntityFrameworkCore.Serialization.Internal
             var properties         = entityEntry.Properties.ToList ( );
             var writeAllProperties = mode == SerializationMode.Full && state != EntityState.Deleted || state == EntityState.Added;
             var writtenProperties  = writeAllProperties ? properties :
-                                                          properties.Where ( property => property.Metadata.IsPrimaryKey ( ) ||
-                                                                                         property.Metadata.IsConcurrencyToken )
+                                                          properties.Where  ( property => property.Metadata.IsPrimaryKey ( ) ||
+                                                                                          property.Metadata.IsConcurrencyToken )
                                                                     .ToList ( );
 
             serializer.WriteProperties ( entry,
                                          writtenProperties.Select ( property => property.Metadata      ).ToArray ( ),
                                          writtenProperties.Select ( property => property.OriginalValue ).ToArray ( ) );
 
-            var modifiedProperties = mode == SerializationMode.ValuesGeneratedOnAdd    ? properties.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) ).ToList ( ) :
-                                     mode == SerializationMode.ValuesGeneratedOnUpdate ? properties.Where ( p => p.Metadata.ValueGenerated.HasFlag ( ValueGenerated.OnUpdate ) ).ToList ( ) :
-                                     properties.Where ( p => p.IsModified ).ToList ( );
+            var modifiedProperties = mode switch
+            {
+                SerializationMode.ValuesGeneratedOnAdd    => properties.HavingValueGeneratedFlag ( ValueGenerated.OnAdd    ).ToList ( ),
+                SerializationMode.ValuesGeneratedOnUpdate => properties.HavingValueGeneratedFlag ( ValueGenerated.OnUpdate ).ToList ( ),
+                _                                         => properties.Where ( property => property.IsModified ).ToList ( )
+            };
 
             if ( modifiedProperties.Count > 0 )
                 serializer.WriteModifiedProperties ( entry, modifiedProperties.Select ( property => property.Metadata     ).ToArray ( ),
@@ -67,19 +71,21 @@ namespace EntityFrameworkCore.Serialization.Internal
 
             if ( mode == SerializationMode.Full )
             {
-                var loadedCollections = entityEntry.Collections.Where   ( collection => collection.IsLoaded )
-                                                               .Select  ( collection => collection.Metadata )
-                                                               .ToArray ( );
-                if ( loadedCollections.Length > 0 )
-                    serializer.WriteLoadedCollections ( entry, loadedCollections );
+                var navigated = entityEntry.Collections
+                                           .Where   ( collection => collection.IsLoaded )
+                                           .Select  ( collection => collection.Metadata )
+                                           .ToArray ( );
+
+                if ( navigated.Length > 0 )
+                    serializer.WriteNavigationState ( entry, navigated );
             }
 
             return entry;
         }
 
-        private static bool HasValueGeneratedFlag ( PropertyEntry property, ValueGenerated valueGenerated )
+        private static IEnumerable < PropertyEntry > HavingValueGeneratedFlag ( this IEnumerable < PropertyEntry > properties, ValueGenerated valueGenerated )
         {
-            return property.Metadata.ValueGenerated.HasFlag ( valueGenerated );
+            return properties.Where ( property => property.Metadata.ValueGenerated.HasFlag ( valueGenerated ) );
         }
     }
 }

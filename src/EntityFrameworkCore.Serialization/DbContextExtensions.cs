@@ -18,17 +18,17 @@ namespace EntityFrameworkCore.Serialization
                                    .Entries ( )
                                    .Where  ( HasDatabaseGeneratedValues )
                                    .Select ( entityEntry =>
-                                   {
-                                       var properties = entityEntry.Properties
-                                                                   .Where  ( property => property.Metadata.IsPrimaryKey ( ) ||
-                                                                                         property.Metadata.IsConcurrencyToken )
-                                                                   .ToList ( );
+                                             {
+                                                 var properties = entityEntry.Properties
+                                                                             .Where  ( property => property.Metadata.IsPrimaryKey ( ) ||
+                                                                                                   property.Metadata.IsConcurrencyToken )
+                                                                             .ToList ( );
 
-                                       return new { EntityEntry = entityEntry,
-                                                    State       = entityEntry.State,
-                                                    Properties  = properties.Select ( p => p.Metadata     ).ToArray ( ),
-                                                    Values      = properties.Select ( p => p.CurrentValue ).ToArray ( ) };
-                                   } )
+                                                 return new { EntityEntry = entityEntry,
+                                                              State       = entityEntry.State,
+                                                              Properties  = properties.Select ( p => p.Metadata     ).ToArray ( ),
+                                                              Values      = properties.Select ( p => p.CurrentValue ).ToArray ( ) };
+                                             } )
                                    .ToList ( );
 
             var rowCount = context.SaveChanges ( );
@@ -57,7 +57,7 @@ namespace EntityFrameworkCore.Serialization
                 // TODO: Log entries not found
                 var entityEntry = finder.Find ( entry );
                 if ( entityEntry != null )
-                    serializer.DeserializeGeneratedValues ( entry, entityEntry );
+                    serializer.DeserializeDatabaseGeneratedValues ( entry, entityEntry );
             }
 
             context.ChangeTracker.AcceptAllChanges ( );

@@ -20,7 +20,7 @@ namespace EntityFrameworkCore.Serialization
             foreach ( var pair in pairs ) serializer.DeserializeProperties         ( pair.Entry, pair.EntityEntry );
             foreach ( var pair in pairs ) serializer.DeserializeEntityState        ( pair.Entry, pair.EntityEntry );
             foreach ( var pair in pairs ) serializer.DeserializeModifiedProperties ( pair.Entry, pair.EntityEntry );
-            foreach ( var pair in pairs ) serializer.DeserializeLoadedCollections  ( pair.Entry, pair.EntityEntry );
+            foreach ( var pair in pairs ) serializer.DeserializeNavigationState    ( pair.Entry, pair.EntityEntry );
         }
     }
 }

@@ -14,7 +14,7 @@ namespace EntityFrameworkCore.Serialization.Compact
 
         public CompactPropertyEntry [ ] Properties         { get; set; }
         public CompactPropertyEntry [ ] ModifiedProperties { get; set; }
-        public int                  [ ] LoadedCollections  { get; set; }
+        public int                  [ ] NavigationState    { get; set; }
 
         private string DebuggerDisplay ( ) => $"{ EntityType } ({ EntityState }): { string.Join ( ", ", Properties.Select ( property => property.Value ) ) }";
     }

@@ -15,7 +15,7 @@ namespace EntityFrameworkCore.Serialization.Dictionary
 
         public Dictionary < string, object > Properties         { get; set; }
         public Dictionary < string, object > ModifiedProperties { get; set; }
-        public string [ ]                    LoadedCollections  { get; set; }
+        public string [ ]                    NavigationState    { get; set; }
 
         private string DebuggerDisplay ( ) => $"{ EntityType } ({ EntityState }): { string.Join ( ", ", Properties.Select ( property => property.Value ) ) }";
     }

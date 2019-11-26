@@ -4,7 +4,6 @@ using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace EntityFrameworkCore.Serialization.Dictionary
 {
@@ -15,37 +14,60 @@ namespace EntityFrameworkCore.Serialization.Dictionary
         public EntityState ReadEntityState ( Entry entry )               => entry.EntityState;
         public IEntityType ReadEntityType  ( Entry entry, IModel model ) => model.FindEntityType ( entry.EntityType );
 
-        public object [ ]? ReadProperties         ( Entry entry, IProperty [ ] properties ) => Read ( properties, entry.Properties );
-        public object [ ]? ReadModifiedProperties ( Entry entry, IEntityType entityType, out IProperty [ ] properties )
+        public object [ ]? ReadProperties ( Entry entry, IEntityType entityType, out IProperty [ ] properties )
         {
-            properties = entry.ModifiedProperties?.Select  ( property => entityType.GetProperty ( property.Key ) )
-                                                  .ToArray ( );
-
-            return Read ( properties, entry.ModifiedProperties );
+            return Read ( entry.Properties, entityType, out properties );
         }
 
-        public void ReadLoadedCollections ( Entry entry, IEntityType entityType, out INavigation [ ] collections )
+        public object [ ]? ReadModifiedProperties ( Entry entry, IEntityType entityType, out IProperty [ ] properties )
         {
-            collections = entry.LoadedCollections?.Select  ( collection => entityType.FindNavigation ( collection ) )
-                                                  .ToArray ( );
+            return Read ( entry.ModifiedProperties, entityType, out properties );
+        }
+
+        public void ReadNavigationState ( Entry entry, IEntityType entityType, out INavigation [ ] collections )
+        {
+            collections = entry.NavigationState?.Select  ( collection => entityType.FindNavigation ( collection ) )
+                                                .ToArray ( );
         }
 
         public void WriteEntityState ( Entry entry, EntityState entityState ) => entry.EntityState = entityState;
         public void WriteEntityType  ( Entry entry, IEntityType entityType  ) => entry.EntityType  = entityType.Name;
 
-        public void WriteProperties         ( Entry entry, IProperty [ ] properties, object [ ] values ) => entry.Properties         = Write ( properties, values );
-        public void WriteModifiedProperties ( Entry entry, IProperty [ ] properties, object [ ] values ) => entry.ModifiedProperties = Write ( properties, values );
+        public void WriteProperties ( Entry entry, IProperty [ ] properties, object [ ] values )
+        {
+            entry.Properties = Write ( properties, values );
+        }
 
-        public void WriteLoadedCollections ( Entry entry, INavigation [ ] collections ) => entry.LoadedCollections = collections.Select ( collection => collection.Name )
-                                                                                                                                .ToArray ( );
+        public void WriteModifiedProperties ( Entry entry, IProperty [ ] properties, object [ ] values )
+        {
+            entry.ModifiedProperties = Write ( properties, values );
+        }
 
-        private static object [ ]? Read ( IProperty [ ] properties, Dictionary < string, object > entries )
+        public void WriteNavigationState ( Entry entry, INavigation [ ] navigated )
+        {
+            entry.NavigationState = navigated.Select  ( collection => collection.Name )
+                                             .ToArray ( );
+        }
+
+        private static object [ ]? Read ( Dictionary < string, object > entries, IEntityType entityType, out IProperty [ ] properties )
         {
             if ( entries == null )
+            {
+                properties = null;
                 return null;
+            }
 
-            return properties.Select  ( property => entries [ property.Name ] )
-                             .ToArray ( );
+            properties = new IProperty [ entries.Count ];
+            var values = new object    [ entries.Count ];
+            var index  = 0;
+
+            foreach ( var entry in entries )
+            {
+                properties [ index   ] = entityType.FindProperty ( entry.Key );
+                values     [ index++ ] = entry.Value;
+            }
+
+            return values;
         }
 
         private static Dictionary < string, object > Write ( IProperty [ ] properties, object [ ] values )

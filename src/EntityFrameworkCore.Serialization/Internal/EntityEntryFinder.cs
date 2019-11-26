@@ -23,12 +23,18 @@ namespace EntityFrameworkCore.Serialization.Internal
         {
             var entityType = Serializer.ReadEntityType ( entry, Context.Model );
 
-            // TODO: Something to cache this...
-            var primaryKeyProperties = entityType.GetProperties ( )
-                                                 .Where ( p => p.IsPrimaryKey ( ) )
-                                                 .ToArray ( );
+            var values = Serializer.ReadProperties ( entry, entityType, out var properties );
 
-            var primaryKey  = Serializer.ReadProperties ( entry, primaryKeyProperties );
+            // TODO: Something to cache this...
+            var primaryKeyIndices = entityType.GetProperties ( )
+                                              .Select ( (s, index) => new {s, index} )
+                                              .Where ( p => p.s.IsPrimaryKey ( ) )
+                                              .Select ( p => p.index )
+                                              .ToList ( );
+
+            var primaryKeyProperties = primaryKeyIndices.Select ( i => properties [ i ] ).ToArray ( );
+            var primaryKey           = primaryKeyIndices.Select ( i => values     [ i ] ).ToArray ( );
+
             var entityEntry = Entries [ entityType ].FirstOrDefault ( e =>
             {
                 return primaryKey.Select ( (value, index) =>

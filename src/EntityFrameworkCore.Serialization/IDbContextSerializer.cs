@@ -10,15 +10,15 @@ namespace EntityFrameworkCore.Serialization
         IEntityType ReadEntityType  ( TEntry entry, IModel model );
         EntityState ReadEntityState ( TEntry entry );
 
-        object [ ]? ReadProperties         ( TEntry entry, IProperty [ ] properties );
-        object [ ]? ReadModifiedProperties ( TEntry entry, IEntityType entityType, out IProperty   [ ] properties  );
-        void        ReadLoadedCollections  ( TEntry entry, IEntityType entityType, out INavigation [ ] collections );
+        object [ ]? ReadProperties         ( TEntry entry, IEntityType entityType, out IProperty   [ ] properties );
+        object [ ]? ReadModifiedProperties ( TEntry entry, IEntityType entityType, out IProperty   [ ] properties );
+        void        ReadNavigationState    ( TEntry entry, IEntityType entityType, out INavigation [ ] navigated  );
 
         void WriteEntityType  ( TEntry entry, IEntityType entityType  );
         void WriteEntityState ( TEntry entry, EntityState entityState );
 
         void WriteProperties         ( TEntry entry, IProperty   [ ] properties, object [ ] values );
         void WriteModifiedProperties ( TEntry entry, IProperty   [ ] properties, object [ ] values );
-        void WriteLoadedCollections  ( TEntry entry, INavigation [ ] collections );
+        void WriteNavigationState    ( TEntry entry, INavigation [ ] navigated );
     }
 }
