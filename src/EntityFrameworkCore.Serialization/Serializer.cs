@@ -5,59 +5,151 @@ using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 
-using EntityFrameworkCore.Serialization.Internal;
+using EntityFrameworkCore.Serialization.Graph;
 
 namespace EntityFrameworkCore.Serialization
 {
     public static class Serializer
     {
-        public static IEnumerable < TEntry > Serialize < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer )
+        public static void Serialize < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable )
         {
-            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
-            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
-
-            return context.ChangeTracker.Entries ( ).Select ( serializer.Serialize );
+            context.Serialize ( serializer.CreateWriter ( writable ) );
         }
 
-        public static IEnumerable < TEntry > SerializeGraph < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, object item )
+        public static void SerializeGraph < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, object item )
         {
-            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
-            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
-
-            return context.Graph ( item ).Select ( serializer.Serialize );
+            context.SerializeGraph ( serializer.CreateWriter ( writable ), item );
         }
 
-        public static IEnumerable < TEntry > SerializeGraph < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, params object [ ] items )
+        public static void SerializeGraph < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, params object [ ] items )
         {
-            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
-            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
-
-            return context.Graph ( items ).Select ( serializer.Serialize );
+            context.SerializeGraph ( serializer.CreateWriter ( writable ), items );
         }
 
-        public static IEnumerable < TEntry > SerializeChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer )
+        public static void SerializeChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable )
         {
-            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
-            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
-
-            return context.ChangeTracker.Entries ( ).Where ( IsChanged ).Select ( serializer.SerializeChanges );
+            context.SerializeChanges ( serializer.CreateWriter ( writable ) );
         }
 
-        public static IEnumerable < TEntry > SerializeGraphChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, object item )
+        public static void SerializeGraphChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, object item )
         {
-            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
-            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
-
-            return context.Graph ( item ).Where ( IsChanged ).Select ( serializer.SerializeChanges );
+            context.SerializeGraphChanges ( serializer.CreateWriter ( writable ), item );
         }
 
-        public static IEnumerable < TEntry > SerializeGraphChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, params object [ ] items )
+        public static void SerializeGraphChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, params object [ ] items )
         {
-            if ( context    == null ) throw new ArgumentNullException ( nameof ( context    ) );
-            if ( serializer == null ) throw new ArgumentNullException ( nameof ( serializer ) );
+            context.SerializeGraphChanges ( serializer.CreateWriter ( writable ), items );
+        }
 
-            return context.Graph ( items ).Where ( IsChanged ).Select ( serializer.SerializeChanges );
+        public static void Serialize ( this DbContext context, IEntityEntryWriter writer )
+        {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
+            foreach ( var entityEntry in context.ChangeTracker.Entries ( ) )
+                writer.Write ( entityEntry, SerializationMode.Full );
+        }
+
+        public static void SerializeGraph ( this DbContext context, IEntityEntryWriter writer, object item )
+        {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
+            foreach ( var entityEntry in context.Graph ( item ) )
+                writer.Write ( entityEntry, SerializationMode.Full );
+        }
+
+        public static void SerializeGraph ( this DbContext context, IEntityEntryWriter writer, params object [ ] items )
+        {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
+            foreach ( var entityEntry in context.Graph ( items ) )
+                writer.Write ( entityEntry, SerializationMode.Full );
+        }
+
+        public static void SerializeChanges ( this DbContext context, IEntityEntryWriter writer )
+        {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
+            foreach ( var entityEntry in context.ChangeTracker.Entries ( ).Where ( IsChanged ) )
+                writer.Write ( entityEntry, SerializationMode.Changes );
+        }
+
+        public static void SerializeGraphChanges ( this DbContext context, IEntityEntryWriter writer, object item )
+        {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
+            foreach ( var entityEntry in context.Graph ( item ).Where ( IsChanged ) )
+                writer.Write ( entityEntry, SerializationMode.Changes );
+        }
+
+        public static void SerializeGraphChanges ( this DbContext context, IEntityEntryWriter writer, params object [ ] items )
+        {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
+            foreach ( var entityEntry in context.Graph ( items ).Where ( IsChanged ) )
+                writer.Write ( entityEntry, SerializationMode.Changes );
+        }
+
+        internal enum SerializationMode
+        {
+            Full,
+            Changes,
+            ValuesGeneratedOnAdd,
+            ValuesGeneratedOnUpdate
+        }
+
+        internal static void Write ( this IEntityEntryWriter writer, EntityEntry entityEntry, SerializationMode mode, IDictionary < IProperty, object? > originalValues = null )
+        {
+            var state = entityEntry.State;
+
+            writer.WriteStartEntry  ( );
+            writer.WriteEntityType  ( entityEntry.Metadata );
+            writer.WriteEntityState ( state );
+
+            var properties         = entityEntry.Properties.ToList ( );
+            var writeAllProperties = mode == SerializationMode.Full && state != EntityState.Deleted || state == EntityState.Added;
+
+            if ( originalValues != null )
+            {
+                foreach ( var property in properties )
+                {
+                    if ( writeAllProperties || property.Metadata.IsPrimaryKey ( ) || property.Metadata.IsConcurrencyToken )
+                    {
+                        if ( originalValues.TryGetValue ( property.Metadata, out var originalValue ) )
+                            writer.WriteProperty ( property.Metadata, originalValue );
+                        else
+                            writer.WriteProperty ( property.Metadata, property.OriginalValue );
+                    }
+                }
+            }
+            else
+                foreach ( var property in properties )
+                    if ( writeAllProperties || property.Metadata.IsPrimaryKey ( ) || property.Metadata.IsConcurrencyToken )
+                        writer.WriteProperty ( property.Metadata, property.OriginalValue );
+
+            var modifiedProperties = mode switch
+            {
+                SerializationMode.ValuesGeneratedOnAdd    => properties.HavingValueGeneratedFlag ( ValueGenerated.OnAdd    ),
+                SerializationMode.ValuesGeneratedOnUpdate => properties.HavingValueGeneratedFlag ( ValueGenerated.OnUpdate ),
+                _                                         => properties.Where ( property => property.IsModified )
+            };
+
+            foreach ( var modifiedProperty in modifiedProperties )
+                writer.WriteModifiedProperty ( modifiedProperty.Metadata, modifiedProperty.CurrentValue );
+
+            if ( mode == SerializationMode.Full )
+                foreach ( var collection in entityEntry.Collections )
+                    if ( collection.IsLoaded )
+                        writer.WriteNavigationState ( collection.Metadata );
+
+            writer.WriteEndEntry ( );
         }
 
         private static List < EntityEntry > Graph ( this DbContext dbContext, object item )
@@ -79,6 +171,11 @@ namespace EntityFrameworkCore.Serialization
             return entityEntry.State == EntityState.Added    ||
                    entityEntry.State == EntityState.Modified ||
                    entityEntry.State == EntityState.Deleted;
+        }
+
+        private static IEnumerable < PropertyEntry > HavingValueGeneratedFlag ( this IEnumerable < PropertyEntry > properties, ValueGenerated valueGenerated )
+        {
+            return properties.Where ( property => property.Metadata.ValueGenerated.HasFlag ( valueGenerated ) );
         }
     }
 }

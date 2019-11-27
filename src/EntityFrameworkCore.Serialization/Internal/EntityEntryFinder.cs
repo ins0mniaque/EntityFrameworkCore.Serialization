@@ -1,73 +1,61 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EntityFrameworkCore.Serialization.Internal
 {
-    public class EntityEntryFinder < TEntry >
+    public class EntityEntryFinder
     {
-        public EntityEntryFinder ( DbContext context, IDbContextSerializer < TEntry > serializer )
+        public EntityEntryFinder ( DbContext context )
         {
-            Context    = context;
-            Entries    = context.ChangeTracker.Entries ( ).ToLookup ( entry => entry.Metadata );
-            Serializer = serializer;
+            Context = context;
+            Entries = context.ChangeTracker.Entries ( ).ToLookup ( entry => entry.Metadata );
         }
 
-        public EntityEntry FindOrCreate ( TEntry entry ) => Find ( entry ) ?? Create ( entry );
+        private DbContext                            Context { get; }
+        private ILookup < IEntityType, EntityEntry > Entries { get; }
 
-        public EntityEntry Find ( TEntry entry )
+        public EntityEntry FindOrCreate ( IEntityType entityType, IDictionary < IProperty, object? > properties )
         {
-            var entityType = Serializer.ReadEntityType ( entry, Context.Model );
+            return Find   ( entityType, properties ) ??
+                   Create ( entityType, properties );
+        }
 
-            var values = Serializer.ReadProperties ( entry, entityType, out var properties );
+        public EntityEntry Find ( IEntityType entityType, IDictionary < IProperty, object? > properties )
+        {
+            var primaryKeyProperties = entityType.FindPrimaryKey ( ).Properties;
+            var primaryKey           = primaryKeyProperties.Select ( property => properties [ property ] ).ToArray ( );
 
-            // TODO: Something to cache this...
-            var primaryKeyIndices = entityType.GetProperties ( )
-                                              .Select ( (s, index) => new {s, index} )
-                                              .Where ( p => p.s.IsPrimaryKey ( ) )
-                                              .Select ( p => p.index )
-                                              .ToList ( );
-
-            var primaryKeyProperties = primaryKeyIndices.Select ( i => properties [ i ] ).ToArray ( );
-            var primaryKey           = primaryKeyIndices.Select ( i => values     [ i ] ).ToArray ( );
-
-            var entityEntry = Entries [ entityType ].FirstOrDefault ( e =>
+            return Entries [ entityType ].FirstOrDefault ( entry =>
             {
-                return primaryKey.Select ( (value, index) =>
+                var index = 0;
+                foreach ( var value in primaryKey )
                 {
-                    var property = e.Property ( primaryKeyProperties [ index ].Name );
+                    var property = entry.Property ( primaryKeyProperties [ index++ ].Name );
+                    var comparer = property.Metadata.GetStructuralValueComparer ( );
+                    var equal    = comparer != null ? comparer.Equals ( property.CurrentValue, value ) :
+                                                      object  .Equals ( property.CurrentValue, value );
+                    if ( ! equal )
+                        return false;
+                }
 
-                    return PropertyEquals ( property.Metadata, property.CurrentValue, value );
-                } ).All ( isEqual => isEqual );
+                return true;
             } );
-
-            return entityEntry;
         }
 
-        public EntityEntry Create ( TEntry entry )
+        public EntityEntry Create ( IEntityType entityType, IDictionary < IProperty, object? > properties )
         {
-            var entityType  = Serializer.ReadEntityType ( entry, Context.Model );
-            var entityEntry = Context.Entry ( Activator.CreateInstance ( entityType.ClrType ) );
-
             // TODO: Move setting the primary key and concurrency token here...
-
-            return entityEntry;
-        }
-
-        private DbContext                            Context    { get; }
-        private ILookup < IEntityType, EntityEntry > Entries    { get; }
-        private IDbContextSerializer < TEntry >      Serializer { get; }
-
-        private static bool PropertyEquals ( IProperty property, object left, object right )
-        {
-            var comparer = property.GetStructuralValueComparer ( );
-
-            return comparer != null ? comparer.Equals ( left, right ) :
-                                      object  .Equals ( left, right );
+            return Context.GetDependencies ( )
+                          .StateManager
+                          .CreateEntry   ( ImmutableDictionary < string, object >.Empty, entityType )
+                          .ToEntityEntry ( );
         }
     }
 }

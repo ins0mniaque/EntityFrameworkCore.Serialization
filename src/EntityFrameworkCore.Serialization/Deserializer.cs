@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 using EntityFrameworkCore.Serialization.Internal;
 
@@ -10,17 +13,97 @@ namespace EntityFrameworkCore.Serialization
 {
     public static class Deserializer
     {
-        public static void Deserialize < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, IEnumerable < TEntry > entries )
+        public static void Deserialize < T > ( this DbContext context, IDbContextDeserializer < T > deserializer, T readable )
         {
-            var finder = new EntityEntryFinder < TEntry > ( context, serializer );
-            var pairs  = entries.Select ( entry => new { Entry       = entry,
-                                                         EntityEntry = finder.FindOrCreate ( entry ) } )
-                                .ToList ( );
+            context.Deserialize ( deserializer.CreateReader ( readable ) );
+        }
 
-            foreach ( var pair in pairs ) serializer.DeserializeProperties         ( pair.Entry, pair.EntityEntry );
-            foreach ( var pair in pairs ) serializer.DeserializeEntityState        ( pair.Entry, pair.EntityEntry );
-            foreach ( var pair in pairs ) serializer.DeserializeModifiedProperties ( pair.Entry, pair.EntityEntry );
-            foreach ( var pair in pairs ) serializer.DeserializeNavigationState    ( pair.Entry, pair.EntityEntry );
+        public static void Deserialize ( this DbContext context, IEntityEntryReader reader )
+        {
+            var finder      = new EntityEntryFinder ( context );
+            var properties  = new Dictionary < IProperty, object? > ( );
+            var collections = new List < CollectionEntry > ( );
+
+            while ( reader.ReadEntry ( ) )
+            {
+                var entityType  = reader.ReadEntityType  ( context.Model );
+                var entityState = reader.ReadEntityState ( );
+
+                properties.Clear ( );
+                while ( reader.ReadProperty ( out var property, out var value ) )
+                    properties [ property ] = value;
+
+                var entityEntry = finder.FindOrCreate ( entityType, properties );
+                foreach ( var entry in properties )
+                    entityEntry.SetProperty ( entry.Key, entry.Value, entityState );
+
+                entityEntry.SetState ( entityState );
+
+                while ( reader.ReadModifiedProperty ( out var property, out var value ) )
+                    entityEntry.SetModifiedProperty ( property, value );
+
+                while ( reader.ReadNavigationState ( out var navigation ) )
+                {
+                    var collection = entityEntry.Collection ( navigation.Name );
+                    if ( ! collection.IsLoaded )
+                        collections.Add ( collection );
+                }
+            }
+
+            foreach ( var collection in collections )
+            {
+                if ( collection.CurrentValue == null )
+                    collection.CurrentValue = (IEnumerable) collection.Metadata.GetCollectionAccessor ( ).Create ( );
+
+                collection.IsLoaded = true;
+            }
+        }
+
+        private static void SetState ( this EntityEntry entityEntry, EntityState entityState )
+        {
+            if ( entityState == EntityState.Modified )
+            {
+                var modified = entityEntry.Properties.Where ( property => property.IsModified ).ToHashSet ( );
+                entityEntry.State = entityState;
+                foreach ( var property in entityEntry.Properties )
+                    property.IsModified = modified.Contains ( property );
+            }
+            else
+                entityEntry.State = entityState;
+        }
+
+        private static void SetProperty ( this EntityEntry entityEntry, IProperty property, object? value, EntityState entityState )
+        {
+            var propertyEntry = entityEntry.Property ( property.Name );
+
+            if ( propertyEntry.Metadata.IsConcurrencyToken )
+            {
+                // TODO: Check original version...
+            }
+
+            propertyEntry.OriginalValue = value;
+            propertyEntry.CurrentValue  = value;
+            propertyEntry.IsModified    = false;
+
+            if ( entityState == EntityState.Added && property.IsPrimaryKey ( ) && property.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) )
+                propertyEntry.IsTemporary = true;
+        }
+
+        private static void SetModifiedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
+        {
+            var propertyEntry = entityEntry.Property ( property.Name );
+
+            propertyEntry.CurrentValue = value;
+            propertyEntry.IsModified   = true;
+        }
+
+        internal static void SetDatabaseGeneratedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
+        {
+            var propertyEntry = entityEntry.Property ( property.Name );
+
+            propertyEntry.OriginalValue = value;
+            propertyEntry.CurrentValue  = value;
+            propertyEntry.IsModified    = false;
         }
     }
 }

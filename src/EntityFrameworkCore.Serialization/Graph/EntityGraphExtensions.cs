@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace EntityFrameworkCore.Serialization.Internal
+namespace EntityFrameworkCore.Serialization.Graph
 {
     /// <summary>
     /// DbContext entity graph extension methods

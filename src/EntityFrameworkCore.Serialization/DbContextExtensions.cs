@@ -12,7 +12,12 @@ namespace EntityFrameworkCore.Serialization
 {
     public static class DbContextExtensions
     {
-        public static int SaveChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, out TEntry [ ] databaseGeneratedValues )
+        public static int SaveChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable )
+        {
+            return context.SaveChanges ( serializer.CreateWriter ( writable ) );
+        }
+
+        public static int SaveChanges ( this DbContext context, IEntityEntryWriter writer )
         {
             var snapshots = context.ChangeTracker
                                    .Entries ( )
@@ -26,38 +31,54 @@ namespace EntityFrameworkCore.Serialization
 
                                                  return new { EntityEntry = entityEntry,
                                                               State       = entityEntry.State,
-                                                              Properties  = properties.Select ( p => p.Metadata     ).ToArray ( ),
-                                                              Values      = properties.Select ( p => p.CurrentValue ).ToArray ( ) };
+                                                              Properties  = properties.ToDictionary ( property => property.Metadata,
+                                                                                                      property => property.CurrentValue ) };
                                              } )
                                    .ToList ( );
 
             var rowCount = context.SaveChanges ( );
-            var index    = 0;
-
-            databaseGeneratedValues = new TEntry [ snapshots.Count ];
 
             foreach ( var snapshot in snapshots )
             {
-                var entry = serializer.SerializeDatabaseGeneratedValues ( snapshot.EntityEntry, snapshot.State );
+                var mode = snapshot.State == EntityState.Added ? Serializer.SerializationMode.ValuesGeneratedOnAdd:
+                                                                 Serializer.SerializationMode.ValuesGeneratedOnUpdate;
 
-                serializer.WriteProperties ( entry, snapshot.Properties, snapshot.Values );
-
-                databaseGeneratedValues [ index++ ] = entry;
+                writer.Write ( snapshot.EntityEntry, mode, snapshot.Properties );
             }
 
             return rowCount;
         }
 
-        public static void AcceptChanges < TEntry > ( this DbContext context, IDbContextSerializer < TEntry > serializer, IEnumerable < TEntry > databaseGeneratedValues )
+        public static void AcceptChanges < T > ( this DbContext context, IDbContextDeserializer < T > deserializer, T readable )
         {
-            var finder = new EntityEntryFinder < TEntry > ( context, serializer );
+            context.AcceptChanges ( deserializer.CreateReader ( readable ) );
+        }
 
-            foreach ( var entry in databaseGeneratedValues )
+        public static void AcceptChanges ( this DbContext context, IEntityEntryReader reader )
+        {
+            var finder     = new EntityEntryFinder ( context );
+            var properties = new Dictionary < IProperty, object? > ( );
+
+            while ( reader.ReadEntry ( ) )
             {
-                // TODO: Log entries not found
-                var entityEntry = finder.Find ( entry );
-                if ( entityEntry != null )
-                    serializer.DeserializeDatabaseGeneratedValues ( entry, entityEntry );
+                var entityType  = reader.ReadEntityType  ( context.Model );
+                var entityState = reader.ReadEntityState ( );
+
+                properties.Clear ( );
+                while ( reader.ReadProperty ( out var property, out var value ) )
+                    properties [ property ] = value;
+
+                var entityEntry = finder.Find ( entityType, properties );
+                if ( entityEntry == null )
+                {
+                    // TODO: Log entries not found
+                    continue;
+                }
+
+                while ( reader.ReadModifiedProperty ( out var property, out var value ) )
+                    entityEntry.SetDatabaseGeneratedProperty ( property, value );
+
+                while ( reader.ReadNavigationState ( out var navigation ) );
             }
 
             context.ChangeTracker.AcceptAllChanges ( );
