@@ -1,7 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 
 namespace EntityFrameworkCore.Serialization.Binary
 {
@@ -9,6 +8,9 @@ namespace EntityFrameworkCore.Serialization.Binary
     {
         public static object? Read ( this BinaryReader reader, Type type )
         {
+            if ( type.IsEnum )
+                type = Enum.GetUnderlyingType ( type );
+
             if ( type == typeof ( bool    ) ) return reader.ReadBoolean ( );
             if ( type == typeof ( byte    ) ) return reader.ReadByte    ( );
             if ( type == typeof ( char    ) ) return reader.ReadChar    ( );
@@ -26,11 +28,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
             if ( type.IsArray )
             {
-                var length = reader.ReadInt32 ( );
-                if ( length == 0 )
+                var length = reader.ReadInt32 ( ) - 1;
+                if ( length == -1 )
                     return null;
-
-                length--;
 
                 var elementType = type.GetElementType ( );
                 var array       = Array.CreateInstance ( elementType, length );
@@ -43,23 +43,23 @@ namespace EntityFrameworkCore.Serialization.Binary
             var nullableOfType = Nullable.GetUnderlyingType ( type );
             if ( nullableOfType != null )
             {
-                var isNull = reader.ReadBoolean ( );
-                if ( isNull )
+                if ( ! reader.ReadBoolean ( ) )
                     return null;
 
                 return reader.Read ( nullableOfType );
             }
 
-            var converter = TypeDescriptor.GetConverter ( type );
-            if ( converter.CanConvertFrom ( typeof ( byte [ ] ) ) &&
-                 converter.CanConvertTo   ( typeof ( byte [ ] ) ) )
-            {
-                var bytes = (byte [ ]) reader.Read ( typeof ( byte [ ] ) );
+            if ( ! type.IsValueType && ! reader.ReadBoolean ( ) )
+                return null;
 
-                return converter.ConvertFrom ( bytes );
-            }
+            var instance = FormatterServices.GetUninitializedObject ( type );
+            var members  = type.GetSerializableMembers ( );
+            var data     = new object [ members.Length ];
 
-            return new BinaryFormatter ( ).Deserialize ( reader.BaseStream );
+            for ( var index = 0; index < members.Length; index++ )
+                data [ index ] = reader.Read ( members [ index ].GetSerializableType ( ) );
+
+            return FormatterServices.PopulateObjectMembers ( instance, members, data );
         }
     }
 }

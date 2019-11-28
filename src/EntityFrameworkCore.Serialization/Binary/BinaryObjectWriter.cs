@@ -1,7 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
 
 namespace EntityFrameworkCore.Serialization.Binary
 {
@@ -9,6 +8,9 @@ namespace EntityFrameworkCore.Serialization.Binary
     {
         public static void Write ( this BinaryWriter writer, Type type, object? value )
         {
+            if ( type.IsEnum )
+                type = Enum.GetUnderlyingType ( type );
+
             if      ( type == typeof ( bool    ) ) writer.Write ( (bool   ) value );
             else if ( type == typeof ( byte    ) ) writer.Write ( (byte   ) value );
             else if ( type == typeof ( char    ) ) writer.Write ( (char   ) value );
@@ -38,33 +40,26 @@ namespace EntityFrameworkCore.Serialization.Binary
                 else
                     writer.Write ( 0 );
             }
-            else
+            else if ( value != null )
             {
                 var nullableOfType = Nullable.GetUnderlyingType ( type );
                 if ( nullableOfType != null )
                 {
-                    if ( value != null )
-                    {
-                        writer.Write ( true );
-                        writer.Write ( nullableOfType, value );
-                    }
-                    else
-                        writer.Write ( false );
-
-                    return;
+                    writer.Write ( true );
+                    writer.Write ( nullableOfType, value );
                 }
 
-                var converter = TypeDescriptor.GetConverter ( type );
-                if ( converter.CanConvertFrom ( typeof ( byte [ ] ) ) &&
-                     converter.CanConvertTo   ( typeof ( byte [ ] ) ) )
-                {
-                    var bytes = (byte [ ]) converter.ConvertTo ( value, typeof ( byte [ ] ) );
-                    writer.Write ( typeof ( byte [ ] ), bytes );
-                    return;
-                }
+                if ( ! type.IsValueType )
+                    writer.Write ( true );
 
-                new BinaryFormatter ( ).Serialize ( writer.BaseStream, value );
+                var members = type.GetSerializableMembers ( );
+                var data    = FormatterServices.GetObjectData ( value, members );
+
+                for ( var index = 0; index < members.Length; index++ )
+                    writer.Write ( members [ index ].GetSerializableType ( ), data [ index ] );
             }
+            else
+                writer.Write ( false );
         }
     }
 }
