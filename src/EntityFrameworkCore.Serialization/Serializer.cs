@@ -48,7 +48,7 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
 
-            foreach ( var entityEntry in context.ChangeTracker.Entries ( ) )
+            foreach ( var entityEntry in context.ChangeTracker.Entries ( ).OrderedByMetadata ( ) )
                 writer.Write ( entityEntry, SerializationMode.Full );
         }
 
@@ -57,7 +57,7 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
 
-            foreach ( var entityEntry in context.Graph ( item ) )
+            foreach ( var entityEntry in context.Graph ( item ).OrderedByMetadata ( ) )
                 writer.Write ( entityEntry, SerializationMode.Full );
         }
 
@@ -66,7 +66,7 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
 
-            foreach ( var entityEntry in context.Graph ( items ) )
+            foreach ( var entityEntry in context.Graph ( items ).OrderedByMetadata ( ) )
                 writer.Write ( entityEntry, SerializationMode.Full );
         }
 
@@ -75,7 +75,7 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
 
-            foreach ( var entityEntry in context.ChangeTracker.Entries ( ).Where ( IsChanged ) )
+            foreach ( var entityEntry in context.ChangeTracker.Entries ( ).Where ( IsChanged ).OrderedByMetadata ( ) )
                 writer.Write ( entityEntry, SerializationMode.Changes );
         }
 
@@ -84,7 +84,7 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
 
-            foreach ( var entityEntry in context.Graph ( item ).Where ( IsChanged ) )
+            foreach ( var entityEntry in context.Graph ( item ).Where ( IsChanged ).OrderedByMetadata ( ) )
                 writer.Write ( entityEntry, SerializationMode.Changes );
         }
 
@@ -93,7 +93,7 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
 
-            foreach ( var entityEntry in context.Graph ( items ).Where ( IsChanged ) )
+            foreach ( var entityEntry in context.Graph ( items ).Where ( IsChanged ).OrderedByMetadata ( ) )
                 writer.Write ( entityEntry, SerializationMode.Changes );
         }
 
@@ -164,6 +164,12 @@ namespace EntityFrameworkCore.Serialization
             var entries = new List < EntityEntry > ( );
             dbContext.TraverseGraph ( items, node => entries.Add ( node.Entry ) );
             return entries;
+        }
+
+        private static IEnumerable < EntityEntry > OrderedByMetadata ( this IEnumerable < EntityEntry > entries )
+        {
+            return entries.OrderBy ( entry => entry.Metadata.Name )
+                          .ThenBy  ( entry => entry.State );
         }
 
         private static bool IsChanged ( this EntityEntry entityEntry )
