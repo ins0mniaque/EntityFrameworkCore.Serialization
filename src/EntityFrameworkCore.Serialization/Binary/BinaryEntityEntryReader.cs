@@ -138,12 +138,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             if ( index != BinaryEntityEntry.NavigationMarker )
                 throw new InvalidOperationException ( );
 
-            var navigation = (byte [ ]) Reader.Read ( typeof ( byte [ ] ) );
-
-            ReadIndex = Reader.ReadInt32 ( );
-            if ( ReadIndex != BinaryEntityEntry.EndMarker )
-                throw new InvalidOperationException ( );
-
+            var navigation  = (byte [ ]) Reader.Read ( typeof ( byte [ ] ) );
             var navigations = new List < INavigation > ( );
 
             for ( var block = 0; block < navigation.Length; block++ )

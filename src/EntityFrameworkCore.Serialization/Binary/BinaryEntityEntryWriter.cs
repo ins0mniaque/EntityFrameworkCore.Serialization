@@ -96,8 +96,8 @@ namespace EntityFrameworkCore.Serialization.Binary
 
                 Navigation = null;
             }
-
-            Writer.Write ( BinaryEntityEntry.EndMarker );
+            else
+                Writer.Write ( BinaryEntityEntry.EndMarker );
         }
     }
 }
