@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EntityFrameworkCore.Serialization
 {
-    public static class CollectionSerializer
+    public static partial class Serializer
     {
         public static void Serialize < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection )
         {
@@ -34,6 +34,11 @@ namespace EntityFrameworkCore.Serialization
         public static void SerializeGraphChanges < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection, params object [ ] items )
         {
             context.SerializeGraphChanges ( serializer.CreateWriter ( collection = new List < T > ( ) ), items );
+        }
+
+        public static int SaveChanges < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection )
+        {
+            return context.SaveChanges ( serializer.CreateWriter ( collection = new List < T > ( ) ) );
         }
     }
 }

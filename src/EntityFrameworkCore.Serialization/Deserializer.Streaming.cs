@@ -4,14 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EntityFrameworkCore.Serialization
 {
-    public static class StreamingDbContextExtensions
+    public static partial class Deserializer
     {
-        public static int SaveChanges ( this DbContext context, IDbContextSerializer < Stream > serializer, out byte [ ] data )
+        public static void Deserialize ( this DbContext context, IDbContextDeserializer < Stream > deserializer, byte [ ] data )
         {
-            using var stream = new MemoryStream ( );
-            var rowCount = context.SaveChanges ( serializer.CreateWriter ( stream ) );
-            data = stream.ToArray ( );
-            return rowCount;
+            using var stream = new MemoryStream ( data );
+            context.Deserialize ( deserializer.CreateReader ( stream ) );
         }
 
         public static void AcceptChanges ( this DbContext context, IDbContextDeserializer < Stream > deserializer, byte [ ] data )

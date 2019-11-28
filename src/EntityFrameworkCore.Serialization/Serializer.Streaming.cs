@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EntityFrameworkCore.Serialization
 {
-    public static class StreamingSerializer
+    public static partial class Serializer
     {
         public static void Serialize ( this DbContext context, IDbContextSerializer < Stream > serializer, out byte [ ] data )
         {
@@ -46,6 +46,14 @@ namespace EntityFrameworkCore.Serialization
             using var stream = new MemoryStream ( );
             context.SerializeGraphChanges ( serializer.CreateWriter ( stream ), items );
             data = stream.ToArray ( );
+        }
+
+        public static int SaveChanges ( this DbContext context, IDbContextSerializer < Stream > serializer, out byte [ ] data )
+        {
+            using var stream = new MemoryStream ( );
+            var rowCount = context.SaveChanges ( serializer.CreateWriter ( stream ) );
+            data = stream.ToArray ( );
+            return rowCount;
         }
     }
 }

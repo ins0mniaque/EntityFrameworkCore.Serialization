@@ -11,13 +11,8 @@ using EntityFrameworkCore.Serialization.Internal;
 
 namespace EntityFrameworkCore.Serialization
 {
-    public static class Deserializer
+    public static partial class Deserializer
     {
-        public static void Deserialize < T > ( this DbContext context, IDbContextDeserializer < T > deserializer, T readable )
-        {
-            context.Deserialize ( deserializer.CreateReader ( readable ) );
-        }
-
         public static void Deserialize ( this DbContext context, IEntityEntryReader reader )
         {
             var finder      = new EntityEntryFinder ( context );
@@ -59,6 +54,36 @@ namespace EntityFrameworkCore.Serialization
             }
         }
 
+        public static void AcceptChanges ( this DbContext context, IEntityEntryReader reader )
+        {
+            var finder     = new EntityEntryFinder ( context );
+            var properties = new Dictionary < IProperty, object? > ( );
+
+            while ( reader.ReadEntry ( ) )
+            {
+                var entityType  = reader.ReadEntityType  ( context.Model );
+                var entityState = reader.ReadEntityState ( );
+
+                properties.Clear ( );
+                while ( reader.ReadProperty ( out var property, out var value ) )
+                    properties [ property ] = value;
+
+                var entityEntry = finder.Find ( entityType, properties );
+                if ( entityEntry == null )
+                {
+                    // TODO: Log entries not found
+                    continue;
+                }
+
+                while ( reader.ReadModifiedProperty ( out var property, out var value ) )
+                    entityEntry.SetDatabaseGeneratedProperty ( property, value );
+
+                while ( reader.ReadNavigationState ( out var navigation ) );
+            }
+
+            context.ChangeTracker.AcceptAllChanges ( );
+        }
+
         private static void SetState ( this EntityEntry entityEntry, EntityState entityState )
         {
             if ( entityState == EntityState.Modified )
@@ -97,7 +122,7 @@ namespace EntityFrameworkCore.Serialization
             propertyEntry.IsModified   = true;
         }
 
-        internal static void SetDatabaseGeneratedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
+        private static void SetDatabaseGeneratedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
         {
             var propertyEntry = entityEntry.Property ( property.Name );
 
