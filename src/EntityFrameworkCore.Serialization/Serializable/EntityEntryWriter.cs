@@ -3,20 +3,20 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace EntityFrameworkCore.Serialization.Dictionary
+namespace EntityFrameworkCore.Serialization.Serializable
 {
     public class EntityEntryWriter : IEntityEntryWriter
     {
-        public EntityEntryWriter ( ICollection < Entry > entries )
+        public EntityEntryWriter ( ICollection < SerializableEntry > entries )
         {
             Entries = entries;
         }
 
-        private ICollection < Entry > Entries { get; }
+        private ICollection < SerializableEntry > Entries { get; }
 
-        private Entry Current { get; set; }
+        private SerializableEntry Current { get; set; }
 
-        public void WriteStartEntry ( ) => Current = new Entry ( );
+        public void WriteStartEntry ( ) => Current = new SerializableEntry ( );
 
         public void WriteEntityType  ( IEntityType entityType  ) => Current.EntityType  = entityType.ShortName ( );
         public void WriteEntityState ( EntityState entityState ) => Current.EntityState = entityState;

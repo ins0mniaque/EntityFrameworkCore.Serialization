@@ -4,16 +4,16 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace EntityFrameworkCore.Serialization.Dictionary
+namespace EntityFrameworkCore.Serialization.Serializable
 {
     public class EntityEntryReader : IEntityEntryReader
     {
-        public EntityEntryReader ( IEnumerable < Entry > entries )
+        public EntityEntryReader ( IEnumerable < SerializableEntry > entries )
         {
             Entries = entries.GetEnumerator ( );
         }
 
-        private IEnumerator < Entry > Entries { get; }
+        private IEnumerator < SerializableEntry > Entries { get; }
 
         private IEntityType                                      EntityType         { get; set; }
         private IEnumerator < KeyValuePair < string, object? > > Property           { get; set; }

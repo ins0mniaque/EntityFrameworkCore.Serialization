@@ -5,10 +5,10 @@ using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 
-namespace EntityFrameworkCore.Serialization.Dictionary
+namespace EntityFrameworkCore.Serialization.Serializable
 {
     [ DebuggerDisplay ( "{DebuggerDisplay(),nq}" ), Serializable ]
-    public class Entry
+    public class SerializableEntry
     {
         public string      EntityType  { get; set; }
         public EntityState EntityState { get; set; }
