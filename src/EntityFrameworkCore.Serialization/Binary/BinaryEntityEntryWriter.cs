@@ -85,7 +85,7 @@ namespace EntityFrameworkCore.Serialization.Binary
 
             var index = navigated.EncodeIndex ( );
 
-            Navigation [ index / 8 ] &= (byte) ( 1 << ( index % 8 ) );
+            Navigation [ index / 8 ] |= (byte) ( 1 << ( index % 8 ) );
         }
 
         public void WriteEndEntry ( )
