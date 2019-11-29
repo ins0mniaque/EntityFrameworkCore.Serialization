@@ -1,4 +1,4 @@
-﻿namespace EntityFrameworkCore.Serialization
+namespace EntityFrameworkCore.Serialization
 {
     public interface IDbContextDeserializer < in T >
     {
