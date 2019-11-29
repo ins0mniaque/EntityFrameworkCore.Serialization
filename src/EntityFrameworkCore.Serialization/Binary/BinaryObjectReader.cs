@@ -11,20 +11,23 @@ namespace EntityFrameworkCore.Serialization.Binary
             if ( type.IsEnum )
                 type = Enum.GetUnderlyingType ( type );
 
-            if ( type == typeof ( bool    ) ) return reader.ReadBoolean ( );
-            if ( type == typeof ( byte    ) ) return reader.ReadByte    ( );
-            if ( type == typeof ( char    ) ) return reader.ReadChar    ( );
-            if ( type == typeof ( decimal ) ) return reader.ReadDecimal ( );
-            if ( type == typeof ( double  ) ) return reader.ReadDouble  ( );
-            if ( type == typeof ( short   ) ) return reader.ReadInt16   ( );
-            if ( type == typeof ( int     ) ) return reader.ReadInt32   ( );
-            if ( type == typeof ( long    ) ) return reader.ReadInt64   ( );
-            if ( type == typeof ( sbyte   ) ) return reader.ReadSByte   ( );
-            if ( type == typeof ( float   ) ) return reader.ReadSingle  ( );
-            if ( type == typeof ( string  ) ) return reader.ReadString  ( );
-            if ( type == typeof ( ushort  ) ) return reader.ReadUInt16  ( );
-            if ( type == typeof ( uint    ) ) return reader.ReadUInt32  ( );
-            if ( type == typeof ( ulong   ) ) return reader.ReadUInt64  ( );
+            switch ( Type.GetTypeCode ( type ) )
+            {
+                case TypeCode.Boolean : return reader.ReadBoolean ( );
+                case TypeCode.SByte   : return reader.ReadSByte   ( );
+                case TypeCode.Byte    : return reader.ReadByte    ( );
+                case TypeCode.Int16   : return reader.ReadInt16   ( );
+                case TypeCode.UInt16  : return reader.ReadUInt16  ( );
+                case TypeCode.Int32   : return reader.ReadInt32   ( );
+                case TypeCode.UInt32  : return reader.ReadUInt32  ( );
+                case TypeCode.Int64   : return reader.ReadInt64   ( );
+                case TypeCode.UInt64  : return reader.ReadUInt64  ( );
+                case TypeCode.Single  : return reader.ReadSingle  ( );
+                case TypeCode.Double  : return reader.ReadDouble  ( );
+                case TypeCode.Decimal : return reader.ReadDecimal ( );
+                case TypeCode.Char    : return reader.ReadChar    ( );
+                case TypeCode.String  : return reader.ReadString  ( );
+            }
 
             if ( type.IsArray )
             {

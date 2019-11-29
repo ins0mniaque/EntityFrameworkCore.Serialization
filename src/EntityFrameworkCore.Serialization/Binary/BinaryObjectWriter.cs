@@ -11,21 +11,25 @@ namespace EntityFrameworkCore.Serialization.Binary
             if ( type.IsEnum )
                 type = Enum.GetUnderlyingType ( type );
 
-            if      ( type == typeof ( bool    ) ) writer.Write ( (bool   ) value );
-            else if ( type == typeof ( byte    ) ) writer.Write ( (byte   ) value );
-            else if ( type == typeof ( char    ) ) writer.Write ( (char   ) value );
-            else if ( type == typeof ( decimal ) ) writer.Write ( (decimal) value );
-            else if ( type == typeof ( double  ) ) writer.Write ( (double ) value );
-            else if ( type == typeof ( short   ) ) writer.Write ( (short  ) value );
-            else if ( type == typeof ( int     ) ) writer.Write ( (int    ) value );
-            else if ( type == typeof ( long    ) ) writer.Write ( (long   ) value );
-            else if ( type == typeof ( sbyte   ) ) writer.Write ( (sbyte  ) value );
-            else if ( type == typeof ( float   ) ) writer.Write ( (float  ) value );
-            else if ( type == typeof ( string  ) ) writer.Write ( (string ) value );
-            else if ( type == typeof ( ushort  ) ) writer.Write ( (ushort ) value );
-            else if ( type == typeof ( uint    ) ) writer.Write ( (uint   ) value );
-            else if ( type == typeof ( ulong   ) ) writer.Write ( (ulong  ) value );
-            else if ( type.IsArray )
+            switch ( Type.GetTypeCode ( type ) )
+            {
+                case TypeCode.Boolean : writer.Write ( (bool)    value ); return;
+                case TypeCode.SByte   : writer.Write ( (sbyte)   value ); return;
+                case TypeCode.Byte    : writer.Write ( (byte)    value ); return;
+                case TypeCode.Int16   : writer.Write ( (short)   value ); return;
+                case TypeCode.UInt16  : writer.Write ( (ushort)  value ); return;
+                case TypeCode.Int32   : writer.Write ( (int)     value ); return;
+                case TypeCode.UInt32  : writer.Write ( (uint)    value ); return;
+                case TypeCode.Int64   : writer.Write ( (long)    value ); return;
+                case TypeCode.UInt64  : writer.Write ( (ulong)   value ); return;
+                case TypeCode.Single  : writer.Write ( (float)   value ); return;
+                case TypeCode.Double  : writer.Write ( (double)  value ); return;
+                case TypeCode.Decimal : writer.Write ( (decimal) value ); return;
+                case TypeCode.Char    : writer.Write ( (char)    value ); return;
+                case TypeCode.String  : writer.Write ( (string)  value ); return;
+            }
+
+            if ( type.IsArray )
             {
                 if ( value != null )
                 {
