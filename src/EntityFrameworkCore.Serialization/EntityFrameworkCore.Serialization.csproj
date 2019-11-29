@@ -2,7 +2,14 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
+
+    <Description>DbContext serialization infrastructure for Entity Framework Core</Description>
+    <PackageTags>Entity Framework Core;entity-framework-core;ef;efcore;serialization</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Visible="false" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.0.1" />

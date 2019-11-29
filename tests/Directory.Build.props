@@ -1,4 +1,5 @@
 <Project>
+
   <Import Project="..\Directory.Build.props" />
 
   <ItemGroup>
@@ -11,4 +12,5 @@
     <!-- CA1034: Nested types should not be visible (but are used in unit tests) -->
     <NoWarn>$(NoWarn);CA1034</NoWarn>
   </PropertyGroup>
+
 </Project>
