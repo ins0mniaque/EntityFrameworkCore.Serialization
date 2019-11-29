@@ -18,6 +18,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         public static MemberInfo [ ] GetSerializableMembers ( this Type type )
         {
+            if ( type == null )
+                throw new ArgumentNullException ( nameof ( type ) );
+
             if ( type.IsSerializable )
                 return FormatterServices.GetSerializableMembers ( type );
 

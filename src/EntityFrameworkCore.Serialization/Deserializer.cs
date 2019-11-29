@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -15,6 +16,9 @@ namespace EntityFrameworkCore.Serialization
     {
         public static void Deserialize ( this DbContext context, IEntityEntryReader reader )
         {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( reader  == null ) throw new ArgumentNullException ( nameof ( reader  ) );
+
             var finder      = new EntityEntryFinder ( context );
             var properties  = new Dictionary < IProperty, object? > ( );
             var collections = new List < CollectionEntry > ( );
@@ -56,6 +60,9 @@ namespace EntityFrameworkCore.Serialization
 
         public static void AcceptChanges ( this DbContext context, IEntityEntryReader reader )
         {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( reader  == null ) throw new ArgumentNullException ( nameof ( reader  ) );
+
             var finder     = new EntityEntryFinder ( context );
             var properties = new Dictionary < IProperty, object? > ( );
 

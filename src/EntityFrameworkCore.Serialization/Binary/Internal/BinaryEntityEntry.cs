@@ -17,7 +17,9 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
 
         public static int EncodeIndex ( this IProperty property )
         {
+            #pragma warning disable EF1001 // Internal EF Core API usage.
             return ( property.GetIndex ( ) + 1 ) << 2;
+            #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
         public static int DecodePropertyIndex ( int index )
@@ -27,7 +29,9 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
 
         public static int EncodeIndex ( this INavigation navigation )
         {
+            #pragma warning disable EF1001 // Internal EF Core API usage.
             return navigation.GetIndex ( );
+            #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
         public static int DecodeNavigationIndex ( int index )
@@ -37,17 +41,23 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
 
         public static IProperty FindProperty ( this IEntityType entityType, int index )
         {
+            #pragma warning disable EF1001 // Internal EF Core API usage.
             return entityType.GetProperties ( ).First ( property => property.GetIndex ( ) == index );
+            #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
         public static INavigation FindNavigation ( this IEntityType entityType, int index )
         {
+            #pragma warning disable EF1001 // Internal EF Core API usage.
             return entityType.GetNavigations ( ).First ( navigation => navigation.GetIndex ( ) == index );
+            #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
         public static int GetNavigationMaxIndex ( this IEntityType entityType )
         {
+            #pragma warning disable EF1001 // Internal EF Core API usage.
             return entityType.GetNavigations ( ).Max ( navigation => navigation.GetIndex ( ) );
+            #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
         public static bool IsDefaultValue ( this IProperty property, object? value )

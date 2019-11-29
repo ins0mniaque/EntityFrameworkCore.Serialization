@@ -18,9 +18,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         private BinaryWriter Writer { get; }
 
-        private IEntityType EntityType { get; set; }
-        private bool        EncodeType { get; set; }
-        private byte [ ]    Navigation { get; set; }
+        private IEntityType? EntityType { get; set; }
+        private bool         EncodeType { get; set; }
+        private byte [ ]?    Navigation { get; set; }
 
         public void WriteStartEntry ( )
         {

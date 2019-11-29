@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics.CodeAnalysis;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EntityFrameworkCore.Serialization
@@ -10,8 +12,8 @@ namespace EntityFrameworkCore.Serialization
         IEntityType ReadEntityType  ( IModel model );
         EntityState ReadEntityState ( );
 
-        bool ReadProperty         ( out IProperty   property, out object? value );
-        bool ReadModifiedProperty ( out IProperty   property, out object? value );
-        bool ReadNavigationState  ( out INavigation navigated );
+        bool ReadProperty         ( [ NotNullWhen ( true ) ] out IProperty?   property, out object? value );
+        bool ReadModifiedProperty ( [ NotNullWhen ( true ) ] out IProperty?   property, out object? value );
+        bool ReadNavigationState  ( [ NotNullWhen ( true ) ] out INavigation? navigated );
     }
 }

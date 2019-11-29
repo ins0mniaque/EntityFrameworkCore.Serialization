@@ -63,6 +63,9 @@ namespace EntityFrameworkCore.Serialization
 
         public static int SaveChanges ( this DbContext context, IEntityEntryWriter writer )
         {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
             var snapshots = context.ChangeTracker
                                    .Entries ( )
                                    .Where  ( HasDatabaseGeneratedValues )
@@ -108,7 +111,7 @@ namespace EntityFrameworkCore.Serialization
                 writer.Write ( entityEntry, mode );
         }
 
-        private static void Write ( this IEntityEntryWriter writer, EntityEntry entityEntry, SerializationMode mode, IDictionary < IProperty, object? > originalValues = null )
+        private static void Write ( this IEntityEntryWriter writer, EntityEntry entityEntry, SerializationMode mode, IDictionary < IProperty, object? >? originalValues = null )
         {
             var state = entityEntry.State;
 

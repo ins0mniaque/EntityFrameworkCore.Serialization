@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data;
 using System.Linq;
@@ -14,6 +15,9 @@ namespace EntityFrameworkCore.Serialization.Internal
     {
         public EntityEntryFinder ( DbContext context )
         {
+            if ( context == null )
+                throw new ArgumentNullException ( nameof ( context ) );
+
             Context = context;
             Entries = context.ChangeTracker.Entries ( ).ToLookup ( entry => entry.Metadata );
         }
@@ -52,10 +56,13 @@ namespace EntityFrameworkCore.Serialization.Internal
         public EntityEntry Create ( IEntityType entityType, IDictionary < IProperty, object? > properties )
         {
             // TODO: Move setting the primary key and concurrency token here...
+
+            #pragma warning disable EF1001 // Internal EF Core API usage.
             return Context.GetDependencies ( )
                           .StateManager
                           .CreateEntry   ( ImmutableDictionary < string, object >.Empty, entityType )
                           .ToEntityEntry ( );
+            #pragma warning restore EF1001 // Internal EF Core API usage.
         }
     }
 }

@@ -10,12 +10,12 @@ namespace EntityFrameworkCore.Serialization.Serializable
     [ DebuggerDisplay ( "{DebuggerDisplay(),nq}" ), Serializable ]
     public class SerializableEntry
     {
-        public string      EntityType  { get; set; }
+        public string?     EntityType  { get; set; }
         public EntityState EntityState { get; set; }
 
-        public Dictionary < string, object? > Properties         { get; set; }
-        public Dictionary < string, object? > ModifiedProperties { get; set; }
-        public HashSet    < string >          NavigationState    { get; set; }
+        public Dictionary < string, object? >? Properties         { get; set; }
+        public Dictionary < string, object? >? ModifiedProperties { get; set; }
+        public HashSet    < string >?          NavigationState    { get; set; }
 
         private string DebuggerDisplay ( ) => $"{ EntityType } ({ EntityState }): { string.Join ( ", ", Properties?.Select ( property => property.Value ) ) }";
     }

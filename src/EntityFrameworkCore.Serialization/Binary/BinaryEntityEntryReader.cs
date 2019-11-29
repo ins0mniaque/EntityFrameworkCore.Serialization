@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
@@ -20,12 +21,12 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         private BinaryReader Reader { get; }
 
-        private IEntityType EntityType  { get; set; }
-        private byte        EntityState { get; set; }
+        private IEntityType? EntityType  { get; set; }
+        private byte         EntityState { get; set; }
 
         private int? ReadIndex { get; set; }
 
-        private IEnumerator < INavigation > Navigation { get; set; }
+        private IEnumerator < INavigation >? Navigation { get; set; }
 
         public bool ReadEntry ( )
         {
@@ -54,7 +55,7 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         public EntityState ReadEntityState ( ) => (EntityState) EntityState;
 
-        public bool ReadProperty ( out IProperty property, out object value )
+        public bool ReadProperty ( [ NotNullWhen ( true ) ] out IProperty? property, out object? value )
         {
             if ( ReadIndex == null )
                 ReadIndex = Reader.ReadInt32 ( );
@@ -75,7 +76,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             return true;
         }
 
-        public bool ReadModifiedProperty ( out IProperty property, out object value )
+        public bool ReadModifiedProperty ( [ NotNullWhen ( true ) ] out IProperty? property, out object? value )
         {
             if ( ReadIndex == null )
                 ReadIndex = Reader.ReadInt32 ( );
@@ -98,7 +99,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             return true;
         }
 
-        private void ReadProperty ( int index, out IProperty property, out object value )
+        private void ReadProperty ( int index, out IProperty property, out object? value )
         {
             var isDefaultValue = ( index & BinaryEntityEntry.DefaultValueFlag ) == BinaryEntityEntry.DefaultValueFlag;
             if ( isDefaultValue )
@@ -113,7 +114,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 value = property.GetDefaultValue ( );
         }
 
-        public bool ReadNavigationState ( out INavigation navigated )
+        public bool ReadNavigationState ( [ NotNullWhen ( true ) ] out INavigation? navigated )
         {
             navigated = null;
 

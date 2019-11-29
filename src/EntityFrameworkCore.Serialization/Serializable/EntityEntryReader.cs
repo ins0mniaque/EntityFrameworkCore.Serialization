@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,10 @@ namespace EntityFrameworkCore.Serialization.Serializable
 
         private IEnumerator < SerializableEntry > Entries { get; }
 
-        private IEntityType                                      EntityType         { get; set; }
-        private IEnumerator < KeyValuePair < string, object? > > Property           { get; set; }
-        private IEnumerator < KeyValuePair < string, object? > > ModifiedProperties { get; set; }
-        private IEnumerator < string >                           NavigationState    { get; set; }
+        private IEntityType?                                      EntityType         { get; set; }
+        private IEnumerator < KeyValuePair < string, object? > >? Property           { get; set; }
+        private IEnumerator < KeyValuePair < string, object? > >? ModifiedProperties { get; set; }
+        private IEnumerator < string >?                           NavigationState    { get; set; }
 
         public bool ReadEntry ( )
         {
@@ -33,7 +34,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
         public IEntityType ReadEntityType  ( IModel model ) => EntityType = model.GetEntityTypes ( ).First ( type => type.ShortName ( ) == Entries.Current.EntityType );
         public EntityState ReadEntityState ( )              => Entries.Current.EntityState;
 
-        public bool ReadProperty ( out IProperty property, out object value )
+        public bool ReadProperty ( [ NotNullWhen ( true ) ] out IProperty? property, out object? value )
         {
             if ( Property == null )
                 Property = Entries.Current.Properties?.GetEnumerator ( );
@@ -50,7 +51,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
             return true;
         }
 
-        public bool ReadModifiedProperty ( out IProperty property, out object value )
+        public bool ReadModifiedProperty ( [ NotNullWhen ( true ) ] out IProperty? property, out object? value )
         {
             if ( ModifiedProperties == null )
                 ModifiedProperties = Entries.Current.ModifiedProperties?.GetEnumerator ( );
@@ -67,7 +68,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
             return true;
         }
 
-        public bool ReadNavigationState ( out INavigation navigated )
+        public bool ReadNavigationState ( [ NotNullWhen ( true ) ] out INavigation? navigated )
         {
             if ( NavigationState == null )
                 NavigationState = Entries.Current.NavigationState?.GetEnumerator ( );

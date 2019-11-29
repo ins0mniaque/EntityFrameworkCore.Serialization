@@ -14,7 +14,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
 
         private ICollection < SerializableEntry > Entries { get; }
 
-        private SerializableEntry Current { get; set; }
+        private SerializableEntry? Current { get; set; }
 
         public void WriteStartEntry ( ) => Current = new SerializableEntry ( );
 
