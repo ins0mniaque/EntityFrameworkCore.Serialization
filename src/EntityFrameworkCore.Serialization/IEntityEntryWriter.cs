@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics.CodeAnalysis;
+
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EntityFrameworkCore.Serialization
@@ -10,9 +12,13 @@ namespace EntityFrameworkCore.Serialization
         void WriteEntityType  ( IEntityType entityType  );
         void WriteEntityState ( EntityState entityState );
 
-        void WriteProperty         ( IProperty   property, object? value );
-        void WriteModifiedProperty ( IProperty   property, object? value );
-        void WriteNavigationState  ( INavigation navigated );
+        [ SuppressMessage ( "Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Property" ) ]
+        void WriteProperty ( IProperty property, object? value );
+
+        [ SuppressMessage ( "Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Property" ) ]
+        void WriteModifiedProperty ( IProperty property, object? value );
+
+        void WriteNavigationState ( INavigation navigated );
 
         void WriteEndEntry ( );
     }
