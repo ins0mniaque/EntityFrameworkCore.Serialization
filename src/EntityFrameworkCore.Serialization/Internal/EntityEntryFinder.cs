@@ -41,7 +41,7 @@ namespace EntityFrameworkCore.Serialization.Internal
                 var index = 0;
                 foreach ( var value in primaryKey )
                 {
-                    var property = entry.Property ( primaryKeyProperties [ index++ ].Name );
+                    var property = entry.Property ( primaryKeyProperties [ index++ ] );
                     var comparer = property.Metadata.GetStructuralValueComparer ( );
                     var equal    = comparer != null ? comparer.Equals ( property.CurrentValue, value ) :
                                                       object  .Equals ( property.CurrentValue, value );

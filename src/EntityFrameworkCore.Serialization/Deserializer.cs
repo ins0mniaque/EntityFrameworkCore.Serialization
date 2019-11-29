@@ -43,7 +43,7 @@ namespace EntityFrameworkCore.Serialization
 
                 while ( reader.ReadNavigationState ( out var navigation ) )
                 {
-                    var collection = entityEntry.Collection ( navigation.Name );
+                    var collection = entityEntry.Collection ( navigation );
                     if ( ! collection.IsLoaded )
                         collections.Add ( collection );
                 }
@@ -106,7 +106,7 @@ namespace EntityFrameworkCore.Serialization
 
         private static void SetProperty ( this EntityEntry entityEntry, IProperty property, object? value, EntityState entityState )
         {
-            var propertyEntry = entityEntry.Property ( property.Name );
+            var propertyEntry = entityEntry.Property ( property );
 
             if ( propertyEntry.Metadata.IsConcurrencyToken )
             {
@@ -123,7 +123,7 @@ namespace EntityFrameworkCore.Serialization
 
         private static void SetModifiedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
         {
-            var propertyEntry = entityEntry.Property ( property.Name );
+            var propertyEntry = entityEntry.Property ( property );
 
             propertyEntry.CurrentValue = value;
             propertyEntry.IsModified   = true;
@@ -131,7 +131,7 @@ namespace EntityFrameworkCore.Serialization
 
         private static void SetDatabaseGeneratedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
         {
-            var propertyEntry = entityEntry.Property ( property.Name );
+            var propertyEntry = entityEntry.Property ( property );
 
             propertyEntry.OriginalValue = value;
             propertyEntry.CurrentValue  = value;

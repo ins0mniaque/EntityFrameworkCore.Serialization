@@ -41,22 +41,18 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
 
         public static IProperty FindProperty ( this IEntityType entityType, int index )
         {
-            #pragma warning disable EF1001 // Internal EF Core API usage.
-            return entityType.GetProperties ( ).First ( property => property.GetIndex ( ) == index );
-            #pragma warning restore EF1001 // Internal EF Core API usage.
+            return entityType.GetProperties ( ).ElementAt ( index );
         }
 
         public static INavigation FindNavigation ( this IEntityType entityType, int index )
         {
-            #pragma warning disable EF1001 // Internal EF Core API usage.
-            return entityType.GetNavigations ( ).First ( navigation => navigation.GetIndex ( ) == index );
-            #pragma warning restore EF1001 // Internal EF Core API usage.
+            return entityType.GetNavigations ( ).ElementAt ( index );
         }
 
         public static int GetNavigationMaxIndex ( this IEntityType entityType )
         {
             #pragma warning disable EF1001 // Internal EF Core API usage.
-            return entityType.GetNavigations ( ).Max ( navigation => navigation.GetIndex ( ) );
+            return entityType.NavigationCount ( ) - 1;
             #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
