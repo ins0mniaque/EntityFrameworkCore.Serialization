@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -9,47 +11,64 @@ namespace EntityFrameworkCore.Serialization.Serializable
     {
         public EntityEntryWriter ( ICollection < SerializableEntry > entries )
         {
-            Entries = entries;
+            Entries = entries ?? throw new ArgumentNullException ( nameof ( entries ) );
         }
 
         private ICollection < SerializableEntry > Entries { get; }
 
-        private SerializableEntry? Current { get; set; }
+        private SerializableEntry? CurrentEntry { get; set; }
 
-        public void WriteStartEntry ( ) => Current = new SerializableEntry ( );
+        private SerializableEntry EnsureCurrentEntry ( [CallerMemberName] string? writeMethod = null )
+        {
+            return CurrentEntry ?? throw new InvalidOperationException ( $"{ nameof ( WriteStartEntry ) } was not called prior to { writeMethod }" );
+        }
 
-        public void WriteEntityType  ( IEntityType entityType  ) => Current.EntityType  = entityType.ShortName ( );
-        public void WriteEntityState ( EntityState entityState ) => Current.EntityState = entityState;
+        public void WriteStartEntry ( ) => CurrentEntry = new SerializableEntry ( );
+
+        public void WriteEntityType  ( IEntityType entityType  ) => EnsureCurrentEntry ( ).EntityType  = entityType.ShortName ( );
+        public void WriteEntityState ( EntityState entityState ) => EnsureCurrentEntry ( ).EntityState = entityState;
 
         public void WriteProperty ( IProperty property, object? value )
         {
-            if ( Current.Properties == null )
-                Current.Properties = new Dictionary < string, object? > ( );
+            if ( property == null )
+                throw new ArgumentNullException ( nameof ( property ) );
 
-            Current.Properties [ property.Name ] = value;
+            var entry = EnsureCurrentEntry ( );
+            if ( entry.Properties == null )
+                entry.Properties = new Dictionary < string, object? > ( );
+
+            entry.Properties [ property.Name ] = value;
         }
 
         public void WriteModifiedProperty ( IProperty property, object? value )
         {
-            if ( Current.ModifiedProperties == null )
-                Current.ModifiedProperties = new Dictionary < string, object? > ( );
+            if ( property == null )
+                throw new ArgumentNullException ( nameof ( property ) );
 
-            Current.ModifiedProperties [ property.Name ] = value;
+            var entry = EnsureCurrentEntry ( );
+            if ( entry.ModifiedProperties == null )
+                entry.ModifiedProperties = new Dictionary < string, object? > ( );
+
+            entry.ModifiedProperties [ property.Name ] = value;
         }
 
         public void WriteNavigationState ( INavigation navigated )
         {
-            if ( Current.NavigationState == null )
-                Current.NavigationState = new HashSet < string > ( );
+            if ( navigated == null )
+                throw new ArgumentNullException ( nameof ( navigated ) );
 
-            Current.NavigationState.Add ( navigated.Name );
+            var entry = EnsureCurrentEntry ( );
+            if ( entry.NavigationState == null )
+                entry.NavigationState = new HashSet < string > ( );
+
+            entry.NavigationState.Add ( navigated.Name );
         }
 
         public void WriteEndEntry ( )
         {
-            Entries.Add ( Current );
+            Entries.Add ( EnsureCurrentEntry ( ) );
 
-            Current = null;
+            CurrentEntry = null;
         }
     }
 }

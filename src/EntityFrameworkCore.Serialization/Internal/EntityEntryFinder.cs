@@ -23,12 +23,17 @@ namespace EntityFrameworkCore.Serialization.Internal
         public EntityEntry FindOrCreate ( IEntityType entityType, IDictionary < IProperty, object? > properties )
         {
             return Find   ( entityType, properties ) ??
-                   Create ( entityType, properties );
+                   Create ( entityType );
         }
 
-        public EntityEntry Find ( IEntityType entityType, IDictionary < IProperty, object? > properties )
+        public EntityEntry? Find ( IEntityType entityType, IDictionary < IProperty, object? > properties )
         {
+            if ( entityType == null ) throw new ArgumentNullException ( nameof ( entityType ) );
+            if ( properties == null ) throw new ArgumentNullException ( nameof ( properties ) );
+
             var primaryKey = entityType.FindPrimaryKey ( );
+            if ( primaryKey == null )
+                throw new MissingPrimaryKeyException ( );
 
             #pragma warning disable EF1001 // Internal EF Core API usage.
             return Context.GetDependencies ( )
@@ -41,10 +46,8 @@ namespace EntityFrameworkCore.Serialization.Internal
             #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
-        public EntityEntry Create ( IEntityType entityType, IDictionary < IProperty, object? > properties )
+        public EntityEntry Create ( IEntityType entityType )
         {
-            // TODO: Move setting the primary key and concurrency token here...
-
             #pragma warning disable EF1001 // Internal EF Core API usage.
             return Context.GetDependencies ( )
                           .StateManager

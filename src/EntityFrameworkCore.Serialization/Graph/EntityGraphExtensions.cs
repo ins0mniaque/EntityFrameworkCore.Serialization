@@ -31,7 +31,7 @@ namespace EntityFrameworkCore.Serialization.Graph
             var graph   = new EntityEntryGraphIterator ( );
             var visited = new HashSet < object > ( );
             var entry   = context.Entry ( item ).GetInfrastructure ( );
-            var root    = new EntityEntryGraphNode < object > ( entry, null, null, null );
+            var root    = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
             graph.TraverseGraph ( root, node =>
             {
@@ -66,7 +66,7 @@ namespace EntityFrameworkCore.Serialization.Graph
                     throw new ArgumentException ( "Starting item is null", nameof ( items ) );
 
                 var entry = context.Entry ( item ).GetInfrastructure ( );
-                var root  = new EntityEntryGraphNode < object > ( entry, null, null, null );
+                var root  = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
                 graph.TraverseGraph ( root, node =>
                 {
@@ -96,14 +96,14 @@ namespace EntityFrameworkCore.Serialization.Graph
             var graph   = new EntityEntryGraphIterator ( );
             var visited = new HashSet < object > ( );
             var entry   = context.Entry ( item ).GetInfrastructure ( );
-            var root    = new EntityEntryGraphNode < object > ( entry, null, null, null );
+            var root    = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
             return graph.TraverseGraphAsync ( root, async ( node, cancellationToken ) =>
             {
                 if ( ! visited.Add ( node.Entry.Entity ) )
                     return false;
 
-                await callback ( node, cancellationToken );
+                await callback ( node, cancellationToken ).ConfigureAwait ( false );
                 return true;
             } );
             #pragma warning restore EF1001 // Internal EF Core API usage.
@@ -131,16 +131,16 @@ namespace EntityFrameworkCore.Serialization.Graph
                     throw new ArgumentException ( "Starting item is null", nameof ( items ) );
 
                 var entry = context.Entry ( item ).GetInfrastructure ( );
-                var root  = new EntityEntryGraphNode < object > ( entry, null, null, null );
+                var root  = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
                 await graph.TraverseGraphAsync ( root, async ( node, cancellationToken ) =>
                 {
                     if ( ! visited.Add ( node.Entry.Entity ) )
                         return false;
 
-                    await callback ( node, cancellationToken );
+                    await callback ( node, cancellationToken ).ConfigureAwait ( false );
                     return true;
-                } );
+                } ).ConfigureAwait ( false );
             }
             #pragma warning restore EF1001 // Internal EF Core API usage.
         }

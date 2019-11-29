@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -16,7 +17,7 @@ namespace EntityFrameworkCore.Serialization.Binary
         public BinaryEntityEntryReader ( Stream       stream ) : this ( new BinaryReaderWith7BitEncoding ( stream ) ) { }
         public BinaryEntityEntryReader ( BinaryReader reader )
         {
-            Reader = reader;
+            Reader = reader ?? throw new ArgumentNullException ( nameof ( reader ) );
         }
 
         private BinaryReader Reader { get; }
@@ -27,6 +28,11 @@ namespace EntityFrameworkCore.Serialization.Binary
         private int? ReadIndex { get; set; }
 
         private IEnumerator < INavigation >? Navigation { get; set; }
+
+        private IEntityType EnsureEntityType ( [CallerMemberName] string? readMethod = null )
+        {
+            return EntityType ?? throw new InvalidOperationException ( $"{ nameof ( ReadEntityType ) } found no entity type or was not called prior to { readMethod }" );
+        }
 
         public bool ReadEntry ( )
         {
@@ -43,6 +49,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         public IEntityType ReadEntityType ( IModel model )
         {
+            if ( model == null )
+                throw new ArgumentNullException ( nameof ( model ) );
+
             if ( ( EntityState & BinaryEntityEntry.EntityTypeFlag ) == BinaryEntityEntry.EntityTypeFlag )
             {
                 var shortName = Reader.ReadString ( );
@@ -50,7 +59,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 EntityState = (byte) ( EntityState & ~BinaryEntityEntry.EntityTypeFlag );
             }
 
-            return EntityType;
+            return EnsureEntityType ( );
         }
 
         public EntityState ReadEntityState ( ) => (EntityState) EntityState;
@@ -106,7 +115,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 index &= ~BinaryEntityEntry.DefaultValueFlag;
 
             index    = BinaryEntityEntry.DecodePropertyIndex ( index );
-            property = EntityType.FindProperty ( index );
+            property = EnsureEntityType ( ).FindProperty ( index );
 
             if ( ! isDefaultValue )
                 value = Reader.Read ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType );
@@ -139,7 +148,10 @@ namespace EntityFrameworkCore.Serialization.Binary
             if ( index != BinaryEntityEntry.NavigationMarker )
                 throw new InvalidOperationException ( );
 
-            var navigation  = (byte [ ]) Reader.Read ( typeof ( byte [ ] ) );
+            var navigation = (byte [ ]?) Reader.Read ( typeof ( byte [ ] ) );
+            if ( navigation == null )
+                throw new InvalidOperationException ( );
+
             var navigations = new List < INavigation > ( );
 
             for ( var block = 0; block < navigation.Length; block++ )
@@ -152,7 +164,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                     {
                         var navigationIndex = BinaryEntityEntry.DecodeNavigationIndex ( block * 8 + bit );
 
-                        navigations.Add ( EntityType.FindNavigation ( navigationIndex ) );
+                        navigations.Add ( EnsureEntityType ( ).FindNavigation ( navigationIndex ) );
                     }
                 }
             }

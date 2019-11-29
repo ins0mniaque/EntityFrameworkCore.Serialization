@@ -41,6 +41,9 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
 
         public static IProperty FindProperty ( this IEntityType entityType, int index )
         {
+            if ( entityType == null )
+                throw new ArgumentNullException ( nameof ( entityType ) );
+
             return entityType.GetProperties ( ).ElementAt ( index );
         }
 
@@ -63,6 +66,9 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
 
         public static object? GetDefaultValue ( this IProperty property )
         {
+            if ( property == null )
+                throw new ArgumentNullException ( nameof ( property ) );
+
             return property.ClrType.IsValueType ? Activator.CreateInstance ( property.ClrType ) : null;
         }
     }

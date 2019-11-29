@@ -8,25 +8,28 @@ namespace EntityFrameworkCore.Serialization.Binary
     {
         public static void Write ( this BinaryWriter writer, Type type, object? value )
         {
+            if ( writer == null ) throw new ArgumentNullException ( nameof ( writer ) );
+            if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
+
             if ( type.IsEnum )
                 type = Enum.GetUnderlyingType ( type );
 
             switch ( Type.GetTypeCode ( type ) )
             {
-                case TypeCode.Boolean : writer.Write ( (bool)    value ); return;
-                case TypeCode.SByte   : writer.Write ( (sbyte)   value ); return;
-                case TypeCode.Byte    : writer.Write ( (byte)    value ); return;
-                case TypeCode.Int16   : writer.Write ( (short)   value ); return;
-                case TypeCode.UInt16  : writer.Write ( (ushort)  value ); return;
-                case TypeCode.Int32   : writer.Write ( (int)     value ); return;
-                case TypeCode.UInt32  : writer.Write ( (uint)    value ); return;
-                case TypeCode.Int64   : writer.Write ( (long)    value ); return;
-                case TypeCode.UInt64  : writer.Write ( (ulong)   value ); return;
-                case TypeCode.Single  : writer.Write ( (float)   value ); return;
-                case TypeCode.Double  : writer.Write ( (double)  value ); return;
-                case TypeCode.Decimal : writer.Write ( (decimal) value ); return;
-                case TypeCode.Char    : writer.Write ( (char)    value ); return;
-                case TypeCode.String  : writer.Write ( (string)  value ); return;
+                case TypeCode.Boolean : writer.Write ( (bool)    ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.SByte   : writer.Write ( (sbyte)   ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Byte    : writer.Write ( (byte)    ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Int16   : writer.Write ( (short)   ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.UInt16  : writer.Write ( (ushort)  ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Int32   : writer.Write ( (int)     ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.UInt32  : writer.Write ( (uint)    ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Int64   : writer.Write ( (long)    ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.UInt64  : writer.Write ( (ulong)   ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Single  : writer.Write ( (float)   ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Double  : writer.Write ( (double)  ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Decimal : writer.Write ( (decimal) ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.Char    : writer.Write ( (char)    ( value ?? throw new InvalidCastException ( ) ) ); return;
+                case TypeCode.String  : writer.Write ( (string?) value ); return;
             }
 
             if ( type.IsArray )

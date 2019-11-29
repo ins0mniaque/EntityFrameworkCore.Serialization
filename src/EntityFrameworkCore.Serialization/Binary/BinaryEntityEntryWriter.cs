@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -13,7 +14,7 @@ namespace EntityFrameworkCore.Serialization.Binary
         public BinaryEntityEntryWriter ( Stream       stream ) : this ( new BinaryWriterWith7BitEncoding ( stream ) ) { }
         public BinaryEntityEntryWriter ( BinaryWriter writer )
         {
-            Writer = writer;
+            Writer = writer ?? throw new ArgumentNullException ( nameof ( writer ) );
         }
 
         private BinaryWriter Writer { get; }
@@ -21,6 +22,11 @@ namespace EntityFrameworkCore.Serialization.Binary
         private IEntityType? EntityType { get; set; }
         private bool         EncodeType { get; set; }
         private byte [ ]?    Navigation { get; set; }
+
+        private IEntityType EnsureEntityType ( [CallerMemberName] string? writeMethod = null )
+        {
+            return EntityType ?? throw new InvalidOperationException ( $"{ nameof ( WriteEntityType ) } was not called prior to { writeMethod }" );
+        }
 
         public void WriteStartEntry ( )
         {
@@ -30,6 +36,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         public void WriteEntityType ( IEntityType entityType )
         {
+            if ( entityType == null )
+                throw new ArgumentNullException ( nameof ( entityType ) );
+
             if ( EntityType != entityType )
             {
                 EntityType = entityType;
@@ -42,7 +51,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             if ( EncodeType )
             {
                 Writer.Write ( (byte) ( (byte) entityState | BinaryEntityEntry.EntityTypeFlag ) );
-                Writer.Write ( EntityType.ShortName ( ) );
+                Writer.Write ( EnsureEntityType ( ).ShortName ( ) );
 
                 EncodeType = false;
             }
@@ -62,6 +71,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         private void WriteProperty ( IProperty property, object? value, int flag )
         {
+            if ( property == null )
+                throw new ArgumentNullException ( nameof ( property ) );
+
             var index = property.EncodeIndex ( ) | flag;
 
             var isDefaultValue = property.IsDefaultValue ( value );
@@ -76,9 +88,12 @@ namespace EntityFrameworkCore.Serialization.Binary
 
         public void WriteNavigationState ( INavigation navigated )
         {
+            if ( navigated == null )
+                throw new ArgumentNullException ( nameof ( navigated ) );
+
             if ( Navigation == null )
             {
-                Navigation = new byte [ (int) Math.Ceiling ( EntityType.GetNavigationMaxIndex ( ) + 1 / 8.0 ) ];
+                Navigation = new byte [ (int) Math.Ceiling ( EnsureEntityType ( ).GetNavigationMaxIndex ( ) + 1 / 8.0 ) ];
 
                 Writer.Write ( BinaryEntityEntry.NavigationMarker );
             }

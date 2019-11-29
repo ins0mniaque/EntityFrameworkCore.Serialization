@@ -8,6 +8,9 @@ namespace EntityFrameworkCore.Serialization.Binary
     {
         public static object? Read ( this BinaryReader reader, Type type )
         {
+            if ( reader == null ) throw new ArgumentNullException ( nameof ( reader ) );
+            if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
+
             if ( type.IsEnum )
                 type = Enum.GetUnderlyingType ( type );
 
@@ -57,7 +60,7 @@ namespace EntityFrameworkCore.Serialization.Binary
 
             var instance = FormatterServices.GetUninitializedObject ( type );
             var members  = type.GetSerializableMembers ( );
-            var data     = new object [ members.Length ];
+            var data     = new object? [ members.Length ];
 
             for ( var index = 0; index < members.Length; index++ )
                 data [ index ] = reader.Read ( members [ index ].GetSerializableType ( ) );

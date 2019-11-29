@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -11,6 +13,9 @@ namespace EntityFrameworkCore.Serialization.Serializable
     {
         public EntityEntryReader ( IEnumerable < SerializableEntry > entries )
         {
+            if ( entries == null )
+                throw new ArgumentNullException ( nameof ( entries ) );
+
             Entries = entries.GetEnumerator ( );
         }
 
@@ -20,6 +25,11 @@ namespace EntityFrameworkCore.Serialization.Serializable
         private IEnumerator < KeyValuePair < string, object? > >? Property           { get; set; }
         private IEnumerator < KeyValuePair < string, object? > >? ModifiedProperties { get; set; }
         private IEnumerator < string >?                           NavigationState    { get; set; }
+
+        private IEntityType EnsureEntityType ( [CallerMemberName] string? readMethod = null )
+        {
+            return EntityType ?? throw new InvalidOperationException ( $"{ nameof ( ReadEntityType ) } was not called prior to { readMethod }" );
+        }
 
         public bool ReadEntry ( )
         {
@@ -31,8 +41,18 @@ namespace EntityFrameworkCore.Serialization.Serializable
             return Entries.MoveNext ( );
         }
 
-        public IEntityType ReadEntityType  ( IModel model ) => EntityType = model.GetEntityTypes ( ).First ( type => type.ShortName ( ) == Entries.Current.EntityType );
-        public EntityState ReadEntityState ( )              => Entries.Current.EntityState;
+        public IEntityType ReadEntityType ( IModel model )
+        {
+            if ( model == null )
+                throw new ArgumentNullException ( nameof ( model ) );
+
+            var shortName = Entries.Current.EntityType;
+
+            return EntityType = model.GetEntityTypes ( ).FirstOrDefault ( type => type.ShortName ( ) == shortName ) ??
+                                throw new KeyNotFoundException ( $"Entity type { shortName } was not found in model" );
+        }
+
+        public EntityState ReadEntityState ( ) => Entries.Current.EntityState;
 
         public bool ReadProperty ( [ NotNullWhen ( true ) ] out IProperty? property, out object? value )
         {
@@ -46,7 +66,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
                 return false;
             }
 
-            property = EntityType.FindProperty ( Property.Current.Key );
+            property = EnsureEntityType ( ).FindProperty ( Property.Current.Key );
             value    = Property.Current.Value;
             return true;
         }
@@ -63,7 +83,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
                 return false;
             }
 
-            property = EntityType.FindProperty ( ModifiedProperties.Current.Key );
+            property = EnsureEntityType ( ).FindProperty ( ModifiedProperties.Current.Key );
             value    = ModifiedProperties.Current.Value;
             return true;
         }
@@ -79,7 +99,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
                 return false;
             }
 
-            navigated = EntityType.FindNavigation ( NavigationState.Current );
+            navigated = EnsureEntityType ( ).FindNavigation ( NavigationState.Current );
             return true;
         }
     }
