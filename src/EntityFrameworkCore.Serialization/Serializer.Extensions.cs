@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -60,6 +62,14 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             return context.SaveChanges ( serializer.CreateWriter ( writable ) );
+        }
+
+        public static Task < int > SaveChangesAsync < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, CancellationToken cancellationToken = default )
+        {
+            if ( serializer == null )
+                throw new ArgumentNullException ( nameof ( serializer ) );
+
+            return context.SaveChangesAsync ( serializer.CreateWriter ( writable ), cancellationToken );
         }
     }
 }

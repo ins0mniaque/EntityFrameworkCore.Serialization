@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -66,35 +68,60 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
 
-            var snapshots = context.ChangeTracker
-                                   .Entries ( )
-                                   .Where  ( HasDatabaseGeneratedValues )
-                                   .OrderedByMetadata ( )
-                                   .Select ( entityEntry =>
-                                             {
-                                                 var properties = entityEntry.Properties
-                                                                             .Where  ( property => property.Metadata.IsPrimaryKey ( ) ||
-                                                                                                   property.Metadata.IsConcurrencyToken )
-                                                                             .ToList ( );
-
-                                                 return new { EntityEntry = entityEntry,
-                                                              State       = entityEntry.State,
-                                                              Properties  = properties.ToDictionary ( property => property.Metadata,
-                                                                                                      property => property.CurrentValue ) };
-                                             } )
-                                   .ToList ( );
-
-            var rowCount = context.SaveChanges ( );
+            var snapshots = context.ChangeTracker.Entries ( ).GetSnapshots ( );
+            var rowCount  = context.SaveChanges ( );
 
             foreach ( var snapshot in snapshots )
-            {
-                var mode = snapshot.State == EntityState.Added ? SerializationMode.ValuesGeneratedOnAdd:
-                                                                 SerializationMode.ValuesGeneratedOnUpdate;
-
-                writer.Write ( snapshot.EntityEntry, mode, snapshot.Properties );
-            }
+                writer.Write ( snapshot.EntityEntry,
+                               snapshot.EntityState == EntityState.Added ? SerializationMode.ValuesGeneratedOnAdd :
+                                                                           SerializationMode.ValuesGeneratedOnUpdate,
+                               snapshot.Properties );
 
             return rowCount;
+        }
+
+        public static async Task < int > SaveChangesAsync ( this DbContext context, IEntityEntryWriter writer, CancellationToken cancellationToken = default )
+        {
+            if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
+            if ( writer  == null ) throw new ArgumentNullException ( nameof ( writer  ) );
+
+            var snapshots = context.ChangeTracker.Entries ( ).GetSnapshots ( );
+            var rowCount  = await context.SaveChangesAsync ( cancellationToken )
+                                         .ConfigureAwait   ( false );
+
+            foreach ( var snapshot in snapshots )
+                writer.Write ( snapshot.EntityEntry,
+                               snapshot.EntityState == EntityState.Added ? SerializationMode.ValuesGeneratedOnAdd :
+                                                                           SerializationMode.ValuesGeneratedOnUpdate,
+                               snapshot.Properties );
+
+            return rowCount;
+        }
+
+        private class Snapshot
+        {
+            public Snapshot ( EntityEntry entityEntry )
+            {
+                EntityEntry = entityEntry;
+                EntityState = entityEntry.State;
+                Properties  = entityEntry.Properties
+                                         .Where  ( property => property.Metadata.IsPrimaryKey ( ) ||
+                                                               property.Metadata.IsConcurrencyToken )
+                                         .ToDictionary ( property => property.Metadata,
+                                                         property => (object?) property.CurrentValue );
+            }
+
+            public EntityEntry EntityEntry { get; }
+            public EntityState EntityState { get; }
+            public Dictionary < IProperty, object? > Properties { get; }
+        }
+
+        private static List < Snapshot > GetSnapshots ( this IEnumerable < EntityEntry > entries )
+        {
+            return entries.Where  ( HasDatabaseGeneratedValues )
+                          .OrderedByMetadata ( )
+                          .Select ( entityEntry => new Snapshot ( entityEntry ) )
+                          .ToList ( );
         }
 
         private enum SerializationMode
