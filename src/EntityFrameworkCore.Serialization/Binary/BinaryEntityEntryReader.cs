@@ -39,11 +39,10 @@ namespace EntityFrameworkCore.Serialization.Binary
             ReadIndex  = null;
             Navigation = null;
 
-            var entityState = Reader.BaseStream.ReadByte ( );
-            if ( entityState == -1 )
+            if ( ! Reader.TryReadByte ( out var entityState ) )
                 return false;
 
-            EntityState = (byte) entityState;
+            EntityState = entityState;
             return true;
         }
 

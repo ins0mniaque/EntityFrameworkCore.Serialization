@@ -67,5 +67,37 @@ namespace EntityFrameworkCore.Serialization.Binary
 
             return FormatterServices.PopulateObjectMembers ( instance, members, data );
         }
+
+        public static bool TryReadByte ( this BinaryReader reader, out byte value )
+        {
+            if ( reader == null )
+                throw new ArgumentNullException ( nameof ( reader ) );
+
+            if ( ! reader.BaseStream.CanSeek )
+                return reader.TryReadByteWithoutSeeking ( out value );
+
+            if ( reader.BaseStream.Position == reader.BaseStream.Length )
+            {
+                value = default;
+                return false;
+            }
+
+            value = reader.ReadByte ( );
+            return true;
+        }
+
+        private static bool TryReadByteWithoutSeeking ( this BinaryReader reader, out byte value )
+        {
+            try
+            {
+                value = reader.ReadByte ( );
+                return true;
+            }
+            catch ( EndOfStreamException )
+            {
+                value = default;
+                return false;
+            }
+        }
     }
 }
