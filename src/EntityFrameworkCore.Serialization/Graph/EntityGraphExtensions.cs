@@ -19,18 +19,17 @@ namespace EntityFrameworkCore.Serialization.Graph
         /// Traverse an entity graph executing a callback on each node.
         /// </summary>
         /// <param name="context">The entity graph context.</param>
-        /// <param name="item">The entity to start traversing the graph from.</param>
+        /// <param name="entity">The entity to start traversing the graph from.</param>
         /// <param name="callback">The callback executed on each node in the entity graph.</param>
-        public static void TraverseGraph ( this DbContext context, object item, Action < EntityEntryGraphNode > callback )
+        public static void TraverseGraph ( this DbContext context, object entity, Action < EntityEntryGraphNode > callback )
         {
             if ( context  == null ) throw new ArgumentNullException ( nameof ( context  ) );
-            if ( item     == null ) throw new ArgumentNullException ( nameof ( item     ) );
             if ( callback == null ) throw new ArgumentNullException ( nameof ( callback ) );
 
             #pragma warning disable EF1001 // Internal EF Core API usage.
             var graph   = new EntityEntryGraphIterator ( );
             var visited = new HashSet < object > ( );
-            var entry   = context.Entry ( item ).GetInfrastructure ( );
+            var entry   = context.Entry ( entity ).GetInfrastructure ( );
             var root    = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
             graph.TraverseGraph ( root, node =>
@@ -48,24 +47,21 @@ namespace EntityFrameworkCore.Serialization.Graph
         /// Traverse an entity graph executing a callback on each node.
         /// </summary>
         /// <param name="context">The entity graph context.</param>
-        /// <param name="items">The entities to start traversing the graph from.</param>
+        /// <param name="entities">The entities to start traversing the graph from.</param>
         /// <param name="callback">The callback executed on each node in the entity graph.</param>
-        public static void TraverseGraph ( this DbContext context, IEnumerable < object > items, Action < EntityEntryGraphNode > callback )
+        public static void TraverseGraph ( this DbContext context, IEnumerable < object > entities, Action < EntityEntryGraphNode > callback )
         {
             if ( context  == null ) throw new ArgumentNullException ( nameof ( context  ) );
-            if ( items    == null ) throw new ArgumentNullException ( nameof ( items    ) );
+            if ( entities == null ) throw new ArgumentNullException ( nameof ( entities ) );
             if ( callback == null ) throw new ArgumentNullException ( nameof ( callback ) );
 
             #pragma warning disable EF1001 // Internal EF Core API usage.
             var graph   = new EntityEntryGraphIterator ( );
             var visited = new HashSet < object > ( );
 
-            foreach ( var item in items )
+            foreach ( var entity in entities )
             {
-                if ( item == null )
-                    throw new ArgumentException ( "Starting item is null", nameof ( items ) );
-
-                var entry = context.Entry ( item ).GetInfrastructure ( );
+                var entry = context.Entry ( entity ).GetInfrastructure ( );
                 var root  = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
                 graph.TraverseGraph ( root, node =>
@@ -84,28 +80,30 @@ namespace EntityFrameworkCore.Serialization.Graph
         /// Traverse an entity graph asynchronously executing a callback on each node.
         /// </summary>
         /// <param name="context">The entity graph context.</param>
-        /// <param name="item">The entity to start traversing the graph from.</param>
+        /// <param name="entity">The entity to start traversing the graph from.</param>
         /// <param name="callback">The asynchronous callback executed on each node in the entity graph.</param>
-        public static Task TraverseGraphAsync ( this DbContext context, object item, Func < EntityEntryGraphNode, CancellationToken, Task > callback )
+        /// <param name="cancellationToken">A System.Threading.CancellationToken to observe while waiting for the task to complete.</param>
+        public static Task TraverseGraphAsync ( this DbContext context, object entity, Func < EntityEntryGraphNode, CancellationToken, Task > callback, CancellationToken cancellationToken = default )
         {
             if ( context  == null ) throw new ArgumentNullException ( nameof ( context  ) );
-            if ( item     == null ) throw new ArgumentNullException ( nameof ( item     ) );
             if ( callback == null ) throw new ArgumentNullException ( nameof ( callback ) );
 
             #pragma warning disable EF1001 // Internal EF Core API usage.
             var graph   = new EntityEntryGraphIterator ( );
             var visited = new HashSet < object > ( );
-            var entry   = context.Entry ( item ).GetInfrastructure ( );
+            var entry   = context.Entry ( entity ).GetInfrastructure ( );
             var root    = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
-            return graph.TraverseGraphAsync ( root, async ( node, cancellationToken ) =>
-            {
-                if ( ! visited.Add ( node.Entry.Entity ) )
-                    return false;
+            return graph.TraverseGraphAsync ( root,
+                                              async ( node, cancellationToken ) =>
+                                              {
+                                                  if ( ! visited.Add ( node.Entry.Entity ) )
+                                                      return false;
 
-                await callback ( node, cancellationToken ).ConfigureAwait ( false );
-                return true;
-            } );
+                                                  await callback ( node, cancellationToken ).ConfigureAwait ( false );
+                                                  return true;
+                                              },
+                                              cancellationToken );
             #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
@@ -113,34 +111,35 @@ namespace EntityFrameworkCore.Serialization.Graph
         /// Traverse an entity graph asynchronously executing a callback on each node.
         /// </summary>
         /// <param name="context">The entity graph context.</param>
-        /// <param name="items">The entities to start traversing the graph from.</param>
+        /// <param name="entities">The entities to start traversing the graph from.</param>
         /// <param name="callback">The asynchronous callback executed on each node in the entity graph.</param>
-        public static async Task TraverseGraphAsync ( this DbContext context, IEnumerable < object > items, Func < EntityEntryGraphNode, CancellationToken, Task > callback )
+        /// <param name="cancellationToken">A System.Threading.CancellationToken to observe while waiting for the task to complete.</param>
+        public static async Task TraverseGraphAsync ( this DbContext context, IEnumerable < object > entities, Func < EntityEntryGraphNode, CancellationToken, Task > callback, CancellationToken cancellationToken = default )
         {
             if ( context  == null ) throw new ArgumentNullException ( nameof ( context  ) );
-            if ( items    == null ) throw new ArgumentNullException ( nameof ( items    ) );
+            if ( entities == null ) throw new ArgumentNullException ( nameof ( entities ) );
             if ( callback == null ) throw new ArgumentNullException ( nameof ( callback ) );
 
             #pragma warning disable EF1001 // Internal EF Core API usage.
             var graph   = new EntityEntryGraphIterator ( );
             var visited = new HashSet < object > ( );
 
-            foreach ( var item in items )
+            foreach ( var entity in entities )
             {
-                if ( item == null )
-                    throw new ArgumentException ( "Starting item is null", nameof ( items ) );
-
-                var entry = context.Entry ( item ).GetInfrastructure ( );
+                var entry = context.Entry ( entity ).GetInfrastructure ( );
                 var root  = new EntityEntryGraphNode < object? > ( entry, null, null, null );
 
-                await graph.TraverseGraphAsync ( root, async ( node, cancellationToken ) =>
-                {
-                    if ( ! visited.Add ( node.Entry.Entity ) )
-                        return false;
+                await graph.TraverseGraphAsync ( root,
+                                                 async ( node, cancellationToken ) =>
+                                                 {
+                                                     if ( ! visited.Add ( node.Entry.Entity ) )
+                                                         return false;
 
-                    await callback ( node, cancellationToken ).ConfigureAwait ( false );
-                    return true;
-                } ).ConfigureAwait ( false );
+                                                     await callback ( node, cancellationToken ).ConfigureAwait ( false );
+                                                     return true;
+                                                 },
+                                                 cancellationToken )
+                           .ConfigureAwait ( false );
             }
             #pragma warning restore EF1001 // Internal EF Core API usage.
         }

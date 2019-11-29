@@ -23,7 +23,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             do
             {
                 if ( shift == 5 * 7 )
-                    throw new FormatException ( "Too many bytes in what should have been a 7 bit encoded Int32." );
+                    throw TooManyBytesError ( typeof ( int ) );
 
                 b = ReadByte ( );
                 count |= ( b & 0x7F ) << shift;
@@ -42,7 +42,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             do
             {
                 if ( shift == 5 * 7 )
-                    throw new FormatException ( "Too many bytes in what should have been a 7 bit encoded UInt32." );
+                    throw TooManyBytesError ( typeof ( uint ) );
 
                 b = ReadByte ( );
                 count |= (uint) ( b & 0x7F ) << shift;
@@ -61,7 +61,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             do
             {
                 if ( shift == 10 * 7 )
-                    throw new FormatException ( "Too many bytes in what should have been a 7 bit encoded Int64." );
+                    throw TooManyBytesError ( typeof ( long ) );
 
                 b = ReadByte ( );
                 count |= (long) ( b & 0x7F ) << shift;
@@ -80,7 +80,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             do
             {
                 if ( shift == 10 * 7 )
-                    throw new FormatException ( "Too many bytes in what should have been a 7 bit encoded UInt64." );
+                    throw TooManyBytesError ( typeof ( ulong ) );
 
                 b = ReadByte ( );
                 count |= (ulong) ( b & 0x7F ) << shift;
@@ -90,5 +90,7 @@ namespace EntityFrameworkCore.Serialization.Binary
 
             return count;
         }
+
+        private static FormatException TooManyBytesError ( Type type ) => new FormatException ( $"Too many bytes in what should have been a 7 bit encoded { type.Name }." );
     }
 }
