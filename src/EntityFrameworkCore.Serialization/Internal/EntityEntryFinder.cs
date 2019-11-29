@@ -15,15 +15,10 @@ namespace EntityFrameworkCore.Serialization.Internal
     {
         public EntityEntryFinder ( DbContext context )
         {
-            if ( context == null )
-                throw new ArgumentNullException ( nameof ( context ) );
-
-            Context = context;
-            Entries = context.ChangeTracker.Entries ( ).ToLookup ( entry => entry.Metadata );
+            Context = context ?? throw new ArgumentNullException ( nameof ( context ) );
         }
 
-        private DbContext                            Context { get; }
-        private ILookup < IEntityType, EntityEntry > Entries { get; }
+        private DbContext Context { get; }
 
         public EntityEntry FindOrCreate ( IEntityType entityType, IDictionary < IProperty, object? > properties )
         {
@@ -33,24 +28,17 @@ namespace EntityFrameworkCore.Serialization.Internal
 
         public EntityEntry Find ( IEntityType entityType, IDictionary < IProperty, object? > properties )
         {
-            var primaryKeyProperties = entityType.FindPrimaryKey ( ).Properties;
-            var primaryKey           = primaryKeyProperties.Select ( property => properties [ property ] ).ToArray ( );
+            var primaryKey = entityType.FindPrimaryKey ( );
 
-            return Entries [ entityType ].FirstOrDefault ( entry =>
-            {
-                var index = 0;
-                foreach ( var value in primaryKey )
-                {
-                    var property = entry.Property ( primaryKeyProperties [ index++ ] );
-                    var comparer = property.Metadata.GetStructuralValueComparer ( );
-                    var equal    = comparer != null ? comparer.Equals ( property.CurrentValue, value ) :
-                                                      object  .Equals ( property.CurrentValue, value );
-                    if ( ! equal )
-                        return false;
-                }
-
-                return true;
-            } );
+            #pragma warning disable EF1001 // Internal EF Core API usage.
+            return Context.GetDependencies ( )
+                          .StateManager
+                          .TryGetEntry   ( primaryKey,
+                                           primaryKey.Properties
+                                                     .Select  ( property => properties [ property ] )
+                                                     .ToArray ( ) )
+                         ?.ToEntityEntry ( );
+            #pragma warning restore EF1001 // Internal EF Core API usage.
         }
 
         public EntityEntry Create ( IEntityType entityType, IDictionary < IProperty, object? > properties )
