@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 
 namespace EntityFrameworkCore.Serialization.Serializable
 {
-    [ DebuggerDisplay ( "{DebuggerDisplay(),nq}" ), Serializable ]
-    public class SerializableEntry
+    [ Serializable ]
+    public partial class SerializableEntry
     {
         public string?     EntityType  { get; set; }
         public EntityState EntityState { get; set; }
@@ -18,7 +16,5 @@ namespace EntityFrameworkCore.Serialization.Serializable
         public Dictionary < string, object? >? ModifiedProperties { get; set; }
         public HashSet    < string >?          NavigationState    { get; set; }
         #pragma warning restore CA2227 // Collection properties should be read only
-
-        private string DebuggerDisplay ( ) => $"{ EntityType } ({ EntityState }): { string.Join ( ", ", Properties?.Select ( property => property.Value ) ) }";
     }
 }

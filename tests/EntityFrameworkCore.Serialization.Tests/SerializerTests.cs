@@ -245,6 +245,32 @@ namespace EntityFrameworkCore.Serialization.Tests
         }
 
         [ Fact ]
+        public void CanSerializeNorthwindDatabase ( )
+        {
+            var serializer = new Serializable.DbContextSerializer ( );
+
+            using var serverContext = fixture.CreateDbContext ( );
+
+            var orders = serverContext.Customers
+                                      .Include     ( customer => customer.Orders )
+                                      .ThenInclude ( order => order.OrderDetails )
+                                      .ThenInclude ( orderDetail => orderDetail.Product )
+                                      .ToList ( );
+
+            var employees = serverContext.Employees.ToList ( );
+
+            serverContext.Serialize ( serializer, out var serializedContext );
+
+            using var clientContext = fixture.CreateDisconnectedDbContext ( );
+
+            clientContext.Deserialize ( serializer, serializedContext );
+
+            Assert.Equal ( serverContext.ChangeTracker.Entries ( ).OrderBy ( entry => entry, EntityEntryComparer.Instance ),
+                           clientContext.ChangeTracker.Entries ( ).OrderBy ( entry => entry, EntityEntryComparer.Instance ),
+                           EntityEntryComparer.Instance );
+        }
+
+        [ Fact ]
         public void CanBinarySerializeNorthwindDatabase ( )
         {
             var serializer = new Binary.BinaryDbContextSerializer ( );
