@@ -14,12 +14,13 @@ namespace EntityFrameworkCore.Serialization
 {
     public static partial class Deserializer
     {
-        public static void Deserialize ( this DbContext context, IEntityEntryReader reader )
+        public static IReadOnlyList < object > Deserialize ( this DbContext context, IEntityEntryReader reader )
         {
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( reader  == null ) throw new ArgumentNullException ( nameof ( reader  ) );
 
             var finder      = new EntityEntryFinder ( context );
+            var entities    = new List < object > ( );
             var properties  = new Dictionary < IProperty, object? > ( );
             var collections = new List < CollectionEntry > ( );
 
@@ -47,6 +48,8 @@ namespace EntityFrameworkCore.Serialization
                     if ( ! collection.IsLoaded )
                         collections.Add ( collection );
                 }
+
+                entities.Add ( entityEntry.Entity );
             }
 
             foreach ( var collection in collections )
@@ -56,6 +59,8 @@ namespace EntityFrameworkCore.Serialization
 
                 collection.IsLoaded = true;
             }
+
+            return entities.AsReadOnly ( );
         }
 
         public static void AcceptChanges ( this DbContext context, IEntityEntryReader reader )

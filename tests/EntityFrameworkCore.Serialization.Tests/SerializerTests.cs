@@ -263,7 +263,7 @@ namespace EntityFrameworkCore.Serialization.Tests
 
             using var clientContext = fixture.CreateDisconnectedDbContext ( );
 
-            clientContext.Deserialize ( serializer, serializedContext );
+            var deserialized = clientContext.Deserialize ( serializer, serializedContext );
 
             Assert.Equal ( serverContext.ChangeTracker.Entries ( ).OrderBy ( entry => entry, EntityEntryComparer.Instance ),
                            clientContext.ChangeTracker.Entries ( ).OrderBy ( entry => entry, EntityEntryComparer.Instance ),
@@ -291,7 +291,7 @@ namespace EntityFrameworkCore.Serialization.Tests
 
             using var clientContext = fixture.CreateDisconnectedDbContext ( );
 
-            clientContext.Deserialize ( serializer, serializedContext );
+            var deserialized = clientContext.Deserialize ( serializer, serializedContext );
 
             Assert.Equal ( serverContext.ChangeTracker.Entries ( ).OrderBy ( entry => entry, EntityEntryComparer.Instance ),
                            clientContext.ChangeTracker.Entries ( ).OrderBy ( entry => entry, EntityEntryComparer.Instance ),
