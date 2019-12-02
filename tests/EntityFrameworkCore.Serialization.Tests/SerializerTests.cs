@@ -287,7 +287,7 @@ namespace EntityFrameworkCore.Serialization.Tests
 
             serverContext.Serialize ( serializer, out var serializedContext );
 
-            Assert.Equal ( 102793, serializedContext.Length );
+            Assert.Equal ( 102794, serializedContext.Length );
 
             using var clientContext = fixture.CreateDisconnectedDbContext ( );
 

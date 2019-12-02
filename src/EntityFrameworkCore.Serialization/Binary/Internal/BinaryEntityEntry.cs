@@ -9,11 +9,12 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
 {
     public static class BinaryEntityEntry
     {
-        public const int EntityTypeFlag   = 0b10000000;
-        public const int DefaultValueFlag = 0b00000001;
-        public const int ModifiedFlag     = 0b00000010;
-        public const int NavigationMarker = 1;
-        public const int EndMarker        = 0;
+        public const int  EntityTypeFlag    = 0b10000000;
+        public const int  DefaultValueFlag  = 0b00000001;
+        public const int  ModifiedFlag      = 0b00000010;
+        public const int  NavigationMarker  = 1;
+        public const int  EndMarker         = 0;
+        public const byte EndOfStreamMarker = 0b11111111;
 
         public static int EncodeIndex ( this IProperty property )
         {

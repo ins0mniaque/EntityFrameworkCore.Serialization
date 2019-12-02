@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -14,7 +15,7 @@ namespace EntityFrameworkCore.Serialization.Binary
 {
     public class BinaryEntityEntryReader : IEntityEntryReader
     {
-        public BinaryEntityEntryReader ( Stream       stream ) : this ( new BinaryReaderWith7BitEncoding ( stream ) ) { }
+        public BinaryEntityEntryReader ( Stream       stream ) : this ( new BinaryReaderWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ) ) { }
         public BinaryEntityEntryReader ( BinaryReader reader )
         {
             Reader = reader ?? throw new ArgumentNullException ( nameof ( reader ) );
@@ -39,7 +40,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             ReadIndex  = null;
             Navigation = null;
 
-            if ( ! Reader.TryReadByte ( out var entityState ) )
+            if ( ! Reader.TryReadByte ( out var entityState ) || entityState == BinaryEntityEntry.EndOfStreamMarker )
                 return false;
 
             EntityState = entityState;

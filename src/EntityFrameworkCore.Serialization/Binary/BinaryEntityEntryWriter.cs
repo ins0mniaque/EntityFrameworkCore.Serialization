@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -9,9 +10,9 @@ using EntityFrameworkCore.Serialization.Binary.Internal;
 
 namespace EntityFrameworkCore.Serialization.Binary
 {
-    public class BinaryEntityEntryWriter : IEntityEntryWriter
+    public class BinaryEntityEntryWriter : IEntityEntryWriter, IDisposable
     {
-        public BinaryEntityEntryWriter ( Stream       stream ) : this ( new BinaryWriterWith7BitEncoding ( stream ) ) { }
+        public BinaryEntityEntryWriter ( Stream       stream ) : this ( new BinaryWriterWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ) ) { }
         public BinaryEntityEntryWriter ( BinaryWriter writer )
         {
             Writer = writer ?? throw new ArgumentNullException ( nameof ( writer ) );
@@ -113,6 +114,28 @@ namespace EntityFrameworkCore.Serialization.Binary
             }
             else
                 Writer.Write ( BinaryEntityEntry.EndMarker );
+        }
+
+        private bool disposed;
+
+        protected virtual void Dispose ( bool disposing )
+        {
+            if ( ! disposed )
+            {
+                if ( disposing )
+                {
+                    Writer.Write ( BinaryEntityEntry.EndOfStreamMarker );
+                    Writer.Flush ( );
+                }
+
+                disposed = true;
+            }
+        }
+
+        public void Dispose ( )
+        {
+            Dispose ( true );
+            GC.SuppressFinalize ( this );
         }
     }
 }
