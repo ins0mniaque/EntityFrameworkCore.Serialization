@@ -13,7 +13,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             using var stream = new MemoryStream ( );
-            context.Serialize ( serializer.CreateWriter ( stream ) );
+            context.Serialize ( serializer, stream );
             data = stream.ToArray ( );
         }
 
@@ -23,7 +23,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             using var stream = new MemoryStream ( );
-            context.SerializeGraph ( serializer.CreateWriter ( stream ), item );
+            context.SerializeGraph ( serializer, stream, item );
             data = stream.ToArray ( );
         }
 
@@ -33,7 +33,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             using var stream = new MemoryStream ( );
-            context.SerializeGraph ( serializer.CreateWriter ( stream ), items );
+            context.SerializeGraph ( serializer, stream, items );
             data = stream.ToArray ( );
         }
 
@@ -43,7 +43,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             using var stream = new MemoryStream ( );
-            context.SerializeChanges ( serializer.CreateWriter ( stream ) );
+            context.SerializeChanges ( serializer, stream );
             data = stream.ToArray ( );
         }
 
@@ -53,7 +53,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             using var stream = new MemoryStream ( );
-            context.SerializeGraphChanges ( serializer.CreateWriter ( stream ), item );
+            context.SerializeGraphChanges ( serializer, stream, item );
             data = stream.ToArray ( );
         }
 
@@ -63,7 +63,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             using var stream = new MemoryStream ( );
-            context.SerializeGraphChanges ( serializer.CreateWriter ( stream ), items );
+            context.SerializeGraphChanges ( serializer, stream, items );
             data = stream.ToArray ( );
         }
 
@@ -73,7 +73,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
             using var stream = new MemoryStream ( );
-            var rowCount = context.SaveChanges ( serializer.CreateWriter ( stream ) );
+            var rowCount = context.SaveChanges ( serializer, stream );
             data = stream.ToArray ( );
             return rowCount;
         }

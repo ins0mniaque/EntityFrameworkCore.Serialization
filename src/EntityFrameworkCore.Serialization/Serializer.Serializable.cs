@@ -12,7 +12,7 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.Serialize ( serializer.CreateWriter ( collection = new List < T > ( ) ) );
+            context.Serialize ( serializer, collection = new List < T > ( ) );
         }
 
         public static void SerializeGraph < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection, object item )
@@ -20,7 +20,7 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraph ( serializer.CreateWriter ( collection = new List < T > ( ) ), item );
+            context.SerializeGraph ( serializer, collection = new List < T > ( ), item );
         }
 
         public static void SerializeGraph < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection, params object [ ] items )
@@ -28,7 +28,7 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraph ( serializer.CreateWriter ( collection = new List < T > ( ) ), items );
+            context.SerializeGraph ( serializer, collection = new List < T > ( ), items );
         }
 
         public static void SerializeChanges < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection )
@@ -36,7 +36,7 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeChanges ( serializer.CreateWriter ( collection = new List < T > ( ) ) );
+            context.SerializeChanges ( serializer, collection = new List < T > ( ) );
         }
 
         public static void SerializeGraphChanges < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection, object item )
@@ -44,7 +44,7 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraphChanges ( serializer.CreateWriter ( collection = new List < T > ( ) ), item );
+            context.SerializeGraphChanges ( serializer, collection = new List < T > ( ), item );
         }
 
         public static void SerializeGraphChanges < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection, params object [ ] items )
@@ -52,7 +52,7 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraphChanges ( serializer.CreateWriter ( collection = new List < T > ( ) ), items );
+            context.SerializeGraphChanges ( serializer, collection = new List < T > ( ), items );
         }
 
         public static int SaveChanges < T > ( this DbContext context, IDbContextSerializer < ICollection < T > > serializer, out IList < T > collection )
@@ -60,7 +60,7 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            return context.SaveChanges ( serializer.CreateWriter ( collection = new List < T > ( ) ) );
+            return context.SaveChanges ( serializer, collection = new List < T > ( ) );
         }
     }
 }

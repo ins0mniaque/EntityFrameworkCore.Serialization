@@ -14,7 +14,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( deserializer ) );
 
             using var stream = new MemoryStream ( data );
-            return context.Deserialize ( deserializer.CreateReader ( stream ) );
+            return context.Deserialize ( deserializer, stream );
         }
 
         public static void AcceptChanges ( this DbContext context, IDbContextDeserializer < Stream > deserializer, byte [ ] data )
@@ -23,7 +23,7 @@ namespace EntityFrameworkCore.Serialization
                 throw new ArgumentNullException ( nameof ( deserializer ) );
 
             using var stream = new MemoryStream ( data );
-            context.AcceptChanges ( deserializer.CreateReader ( stream ) );
+            context.AcceptChanges ( deserializer, stream );
         }
     }
 }
