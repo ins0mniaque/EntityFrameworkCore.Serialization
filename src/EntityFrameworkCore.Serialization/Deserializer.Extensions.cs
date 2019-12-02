@@ -12,7 +12,9 @@ namespace EntityFrameworkCore.Serialization
             if ( deserializer == null )
                 throw new ArgumentNullException ( nameof ( deserializer ) );
 
-            return context.Deserialize ( deserializer.CreateReader ( readable ) );
+            var reader = deserializer.CreateReader ( readable );
+            using ( reader as IDisposable )
+                return context.Deserialize ( reader );
         }
 
         public static void AcceptChanges < T > ( this DbContext context, IDbContextDeserializer < T > deserializer, T readable )
@@ -20,7 +22,9 @@ namespace EntityFrameworkCore.Serialization
             if ( deserializer == null )
                 throw new ArgumentNullException ( nameof ( deserializer ) );
 
-            context.AcceptChanges ( deserializer.CreateReader ( readable ) );
+            var reader = deserializer.CreateReader ( readable );
+            using ( reader as IDisposable )
+                context.AcceptChanges ( reader );
         }
     }
 }

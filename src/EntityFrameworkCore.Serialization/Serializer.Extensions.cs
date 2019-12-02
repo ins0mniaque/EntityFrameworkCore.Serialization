@@ -13,7 +13,9 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.Serialize ( serializer.CreateWriter ( writable ) );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                context.Serialize ( writer );
         }
 
         public static void SerializeGraph < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, object item )
@@ -21,7 +23,9 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraph ( serializer.CreateWriter ( writable ), item );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                context.SerializeGraph ( writer, item );
         }
 
         public static void SerializeGraph < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, params object [ ] items )
@@ -29,7 +33,9 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraph ( serializer.CreateWriter ( writable ), items );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                context.SerializeGraph ( writer, items );
         }
 
         public static void SerializeChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable )
@@ -37,7 +43,9 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeChanges ( serializer.CreateWriter ( writable ) );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                context.SerializeChanges ( writer );
         }
 
         public static void SerializeGraphChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, object item )
@@ -45,7 +53,9 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraphChanges ( serializer.CreateWriter ( writable ), item );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                context.SerializeGraphChanges ( writer, item );
         }
 
         public static void SerializeGraphChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, params object [ ] items )
@@ -53,7 +63,9 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            context.SerializeGraphChanges ( serializer.CreateWriter ( writable ), items );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                context.SerializeGraphChanges ( writer, items );
         }
 
         public static int SaveChanges < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable )
@@ -61,15 +73,20 @@ namespace EntityFrameworkCore.Serialization
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            return context.SaveChanges ( serializer.CreateWriter ( writable ) );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                return context.SaveChanges ( writer );
         }
 
-        public static Task < int > SaveChangesAsync < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, CancellationToken cancellationToken = default )
+        public static async Task < int > SaveChangesAsync < T > ( this DbContext context, IDbContextSerializer < T > serializer, T writable, CancellationToken cancellationToken = default )
         {
             if ( serializer == null )
                 throw new ArgumentNullException ( nameof ( serializer ) );
 
-            return context.SaveChangesAsync ( serializer.CreateWriter ( writable ), cancellationToken );
+            var writer = serializer.CreateWriter ( writable );
+            using ( writer as IDisposable )
+                return await context.SaveChangesAsync ( writer, cancellationToken )
+                                    .ConfigureAwait   ( false );
         }
     }
 }
