@@ -38,14 +38,6 @@ namespace EntityFrameworkCore.Serialization.Tests
         protected abstract TDbContext Factory ( DbContextOptions < TDbContext > options );
         protected abstract void       Seed    ( TDbContext db );
 
-        public void Dispose ( )
-        {
-            Dispose ( true );
-            GC.SuppressFinalize ( this );
-        }
-
-        ~SqliteDbContextFixture ( ) => Dispose ( false );
-
         protected virtual void Dispose ( bool disposing )
         {
             if ( disposing )
@@ -53,6 +45,12 @@ namespace EntityFrameworkCore.Serialization.Tests
                 disconnected.Dispose ( );
                 connection  .Dispose ( );
             }
+        }
+
+        public void Dispose ( )
+        {
+            Dispose ( true );
+            GC.SuppressFinalize ( this );
         }
     }
 }
