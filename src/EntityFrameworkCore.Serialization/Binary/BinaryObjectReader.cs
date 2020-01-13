@@ -29,7 +29,13 @@ namespace EntityFrameworkCore.Serialization.Binary
                 case TypeCode.Double  : return reader.ReadDouble  ( );
                 case TypeCode.Decimal : return reader.ReadDecimal ( );
                 case TypeCode.Char    : return reader.ReadChar    ( );
-                case TypeCode.String  : return reader.ReadString  ( );
+                case TypeCode.String  :
+                {
+                    if ( ! reader.ReadBoolean ( ) )
+                        return null;
+
+                    return reader.ReadString ( );
+                }
             }
 
             if ( type.IsArray )

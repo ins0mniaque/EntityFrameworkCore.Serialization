@@ -16,6 +16,17 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
         }
 
         [ Fact ]
+        public void CanWriteNullString ( )
+        {
+            using var stream = new MemoryStream ( );
+            using var writer = new BinaryWriterWith7BitEncoding ( stream );
+
+            BinaryObjectWriter.Write ( writer, typeof ( string ), null );
+
+            Assert.Equal ( stream.ToArray ( ), new byte [ ] { 0 } );
+        }
+
+        [ Fact ]
         public void CanWriteNullObject ( )
         {
             var complex = (ComplexObject?) null;
@@ -39,7 +50,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             BinaryObjectWriter.Write ( writer, typeof ( ComplexObject ), complex );
 
             Assert.Equal ( stream.ToArray ( ),
-                           new byte [ ] { 1, 4, (byte) 'N', (byte) 'a', (byte) 'm', (byte) 'e',
+                           new byte [ ] { 1, 1, 4, (byte) 'N', (byte) 'a', (byte) 'm', (byte) 'e',
                                              1, 1, 2, 3, 4,
                                              (byte) TypeCode.DBNull,
                                              0 } );

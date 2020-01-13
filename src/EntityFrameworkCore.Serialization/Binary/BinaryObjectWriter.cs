@@ -29,7 +29,18 @@ namespace EntityFrameworkCore.Serialization.Binary
                 case TypeCode.Double  : writer.Write ( (double)  ( value ?? throw new InvalidCastException ( ) ) ); return;
                 case TypeCode.Decimal : writer.Write ( (decimal) ( value ?? throw new InvalidCastException ( ) ) ); return;
                 case TypeCode.Char    : writer.Write ( (char)    ( value ?? throw new InvalidCastException ( ) ) ); return;
-                case TypeCode.String  : writer.Write ( (string?) value ); return;
+                case TypeCode.String  :
+                {
+                    if ( value is string text )
+                    {
+                        writer.Write ( true );
+                        writer.Write ( text );
+                    }
+                    else
+                        writer.Write ( false );
+
+                    return;
+                }
             }
 
             if ( type.IsArray )
