@@ -84,11 +84,10 @@ namespace EntityFrameworkCore.Serialization
                 if ( entityEntry == null )
                 {
                     // TODO: Log entries not found
-                    continue;
                 }
 
                 while ( reader.ReadModifiedProperty ( out var property, out var value ) )
-                    entityEntry.SetDatabaseGeneratedProperty ( property, value );
+                    entityEntry?.SetDatabaseGeneratedProperty ( property, value );
 
                 while ( reader.ReadNavigationState ( out var navigation ) );
             }
