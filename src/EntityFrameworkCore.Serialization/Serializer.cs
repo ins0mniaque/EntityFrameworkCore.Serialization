@@ -169,8 +169,8 @@ namespace EntityFrameworkCore.Serialization
 
             var modifiedProperties = mode switch
             {
-                SerializationMode.ValuesGeneratedOnAdd    => properties.HavingValueGeneratedFlag ( ValueGenerated.OnAdd    ),
-                SerializationMode.ValuesGeneratedOnUpdate => properties.HavingValueGeneratedFlag ( ValueGenerated.OnUpdate ),
+                SerializationMode.ValuesGeneratedOnAdd    => properties.Where ( HasValueGeneratedOnAdd    ),
+                SerializationMode.ValuesGeneratedOnUpdate => properties.Where ( HasValueGeneratedOnUpdate ),
                 _                                         => properties.Where ( property => property.IsModified )
             };
 
@@ -214,18 +214,26 @@ namespace EntityFrameworkCore.Serialization
 
         private static bool HasDatabaseGeneratedValues ( this EntityEntry entityEntry )
         {
-            return entityEntry.State == EntityState.Added    && entityEntry.HasValueGeneratedFlag ( ValueGenerated.OnAdd    ) ||
-                   entityEntry.State == EntityState.Modified && entityEntry.HasValueGeneratedFlag ( ValueGenerated.OnUpdate );
+            return entityEntry.State == EntityState.Added    && entityEntry.Properties.Any ( HasValueGeneratedOnAdd    ) ||
+                   entityEntry.State == EntityState.Modified && entityEntry.Properties.Any ( HasValueGeneratedOnUpdate );
         }
 
-        private static bool HasValueGeneratedFlag ( this EntityEntry entityEntry, ValueGenerated valueGenerated )
-        {
-            return entityEntry.Metadata.GetProperties ( ).Any ( property => property.ValueGenerated.HasFlag ( valueGenerated ) );
-        }
+        private static bool HasValueGeneratedOnAdd    ( this PropertyEntry property ) => property.HasValueGeneratedFlag ( ValueGenerated.OnAdd    );
+        private static bool HasValueGeneratedOnUpdate ( this PropertyEntry property ) => property.HasValueGeneratedFlag ( ValueGenerated.OnUpdate );
 
-        private static IEnumerable < PropertyEntry > HavingValueGeneratedFlag ( this IEnumerable < PropertyEntry > properties, ValueGenerated valueGenerated )
+        private static bool HasValueGeneratedFlag ( this PropertyEntry property, ValueGenerated valueGenerated )
         {
-            return properties.Where ( property => property.Metadata.ValueGenerated.HasFlag ( valueGenerated ) );
+            if ( property.Metadata.ValueGenerated.HasFlag ( valueGenerated ) )
+                return true;
+
+            if ( property.Metadata.IsPrimaryKey ( ) )
+            {
+                var principal = property.Metadata.FindFirstPrincipal ( );
+                if ( principal != null && principal.ValueGenerated.HasFlag ( valueGenerated ) )
+                    return true;
+            }
+
+            return false;
         }
     }
 }

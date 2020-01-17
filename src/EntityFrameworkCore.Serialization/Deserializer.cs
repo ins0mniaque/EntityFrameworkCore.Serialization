@@ -81,13 +81,31 @@ namespace EntityFrameworkCore.Serialization
                     properties [ property ] = value;
 
                 var entityEntry = finder.Find ( entityType, properties );
-                if ( entityEntry == null )
+                if ( entityEntry != null )
                 {
-                    // TODO: Log entries not found
+                    while ( reader.ReadModifiedProperty ( out var property, out var value ) )
+                        entityEntry.SetDatabaseGeneratedProperty ( property, value );
                 }
+                else
+                {
+                    var modifiedProperties = new List < (IProperty Property, object? Value) > ( );
+                    while ( reader.ReadModifiedProperty ( out var property, out var value ) )
+                    {
+                        modifiedProperties.Add ( (property, value) );
+                        properties [ property ] = value;
+                    }
 
-                while ( reader.ReadModifiedProperty ( out var property, out var value ) )
-                    entityEntry?.SetDatabaseGeneratedProperty ( property, value );
+                    entityEntry = finder.Find ( entityType, properties );
+                    if ( entityEntry != null )
+                    {
+                        foreach ( var modified in modifiedProperties )
+                            entityEntry.SetDatabaseGeneratedProperty ( modified.Property, modified.Value );
+                    }
+                    else
+                    {
+                        // TODO: Log entries not found
+                    }
+                }
 
                 while ( reader.ReadNavigationState ( out var navigation ) );
             }
