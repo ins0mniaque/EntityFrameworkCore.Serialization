@@ -6,7 +6,12 @@ namespace EntityFrameworkCore.Serialization.Binary
 {
     public static class BinaryObjectWriter
     {
-        public static void Write ( this BinaryWriter writer, Type type, object? value )
+        public static void Write < T > ( this BinaryWriter writer, object? value, IBinaryObjectWriterSurrogate? surrogate = default )
+        {
+            writer.Write ( typeof ( T ), value, surrogate );
+        }
+
+        public static void Write ( this BinaryWriter writer, Type type, object? value, IBinaryObjectWriterSurrogate? surrogate = default )
         {
             if ( writer == null ) throw new ArgumentNullException ( nameof ( writer ) );
             if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
@@ -69,6 +74,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
                 if ( ! type.IsValueType )
                     writer.Write ( true );
+
+                if ( surrogate != null && surrogate.TryWrite ( writer, type, value ) )
+                    return;
 
                 var members = type.GetSerializableMembers ( );
                 var data    = FormatterServices.GetObjectData ( value, members );

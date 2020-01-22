@@ -15,13 +15,17 @@ namespace EntityFrameworkCore.Serialization.Binary
 {
     public class BinaryEntityEntryReader : IEntityEntryReader
     {
-        public BinaryEntityEntryReader ( Stream       stream ) : this ( new BinaryReaderWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ) ) { }
-        public BinaryEntityEntryReader ( BinaryReader reader )
+        public BinaryEntityEntryReader ( Stream       stream ) : this ( stream, null ) { }
+        public BinaryEntityEntryReader ( BinaryReader reader ) : this ( reader, null ) { }
+        public BinaryEntityEntryReader ( Stream       stream, IBinaryObjectReaderSurrogate? surrogate ) : this ( new BinaryReaderWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ), surrogate ) { }
+        public BinaryEntityEntryReader ( BinaryReader reader, IBinaryObjectReaderSurrogate? surrogate )
         {
-            Reader = reader ?? throw new ArgumentNullException ( nameof ( reader ) );
+            Reader    = reader ?? throw new ArgumentNullException ( nameof ( reader ) );
+            Surrogate = surrogate;
         }
 
-        private BinaryReader Reader { get; }
+        private BinaryReader                  Reader    { get; }
+        private IBinaryObjectReaderSurrogate? Surrogate { get; }
 
         private IEntityType? EntityType  { get; set; }
         private byte         EntityState { get; set; }
@@ -118,7 +122,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             property = EnsureEntityType ( ).FindProperty ( index );
 
             if ( ! isDefaultValue )
-                value = Reader.Read ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType );
+                value = Reader.Read ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType, Surrogate );
             else
                 value = property.GetDefaultValue ( );
         }
@@ -148,7 +152,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             if ( index != BinaryEntityEntry.NavigationMarker )
                 throw new InvalidOperationException ( );
 
-            var navigation = (byte [ ]?) Reader.Read ( typeof ( byte [ ] ) );
+            var navigation = Reader.Read < byte [ ] > ( );
             if ( navigation == null )
                 throw new InvalidOperationException ( );
 

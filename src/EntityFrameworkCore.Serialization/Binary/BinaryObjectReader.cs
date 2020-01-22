@@ -6,7 +6,14 @@ namespace EntityFrameworkCore.Serialization.Binary
 {
     public static class BinaryObjectReader
     {
-        public static object? Read ( this BinaryReader reader, Type type )
+        public static T Read < T > ( this BinaryReader reader, IBinaryObjectReaderSurrogate? surrogate = default )
+        {
+            #pragma warning disable CS8601 // Possible null reference assignment; T can be null
+            return (T) reader.Read ( typeof ( T ), surrogate );
+            #pragma warning restore CS8601 // Possible null reference assignment; T can be null
+        }
+
+        public static object? Read ( this BinaryReader reader, Type type, IBinaryObjectReaderSurrogate? surrogate = default )
         {
             if ( reader == null ) throw new ArgumentNullException ( nameof ( reader ) );
             if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
@@ -63,6 +70,9 @@ namespace EntityFrameworkCore.Serialization.Binary
 
             if ( ! type.IsValueType && ! reader.ReadBoolean ( ) )
                 return null;
+
+            if ( surrogate != null && surrogate.TryRead ( reader, type, out var value ) )
+                return value;
 
             var instance = FormatterServices.GetUninitializedObject ( type );
             var members  = type.GetSerializableMembers ( );

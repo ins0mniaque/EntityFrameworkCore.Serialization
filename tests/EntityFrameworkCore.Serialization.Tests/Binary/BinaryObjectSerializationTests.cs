@@ -21,7 +21,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             using var stream = new MemoryStream ( );
             using var writer = new BinaryWriterWith7BitEncoding ( stream );
 
-            BinaryObjectWriter.Write ( writer, typeof ( string ), null );
+            BinaryObjectWriter.Write < string > ( writer, null );
 
             Assert.Equal ( stream.ToArray ( ), new byte [ ] { 0 } );
         }
@@ -34,7 +34,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             using var stream = new MemoryStream ( );
             using var writer = new BinaryWriterWith7BitEncoding ( stream );
 
-            BinaryObjectWriter.Write ( writer, typeof ( ComplexObject ), complex );
+            BinaryObjectWriter.Write < ComplexObject > ( writer, complex );
 
             Assert.Equal ( stream.ToArray ( ), new byte [ ] { 0 } );
         }
@@ -47,7 +47,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             using var stream = new MemoryStream ( );
             using var writer = new BinaryWriterWith7BitEncoding ( stream );
 
-            BinaryObjectWriter.Write ( writer, typeof ( ComplexObject ), complex );
+            BinaryObjectWriter.Write < ComplexObject > ( writer, complex );
 
             Assert.Equal ( stream.ToArray ( ),
                            new byte [ ] { 1, 1, 4, (byte) 'N', (byte) 'a', (byte) 'm', (byte) 'e',
@@ -69,13 +69,55 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             using var input  = new MemoryStream ( output.ToArray ( ) );
             using var reader = new BinaryReaderWith7BitEncoding ( input );
 
-            var deserializedComplex = (ComplexObject?) BinaryObjectReader.Read ( reader, typeof ( ComplexObject ) );
+            var deserializedComplex = BinaryObjectReader.Read < ComplexObject > ( reader );
 
             Assert.NotNull ( deserializedComplex );
-            Assert.Equal   ( complex.Name,     deserializedComplex?.Name     );
-            Assert.Equal   ( complex.Version,  deserializedComplex?.Version  );
-            Assert.Equal   ( complex.TypeCode, deserializedComplex?.TypeCode );
-            Assert.Null    ( deserializedComplex?.Parent );
+            if ( deserializedComplex == null )
+                return;
+
+            Assert.Equal   ( complex.Name,     deserializedComplex.Name     );
+            Assert.Equal   ( complex.Version,  deserializedComplex.Version  );
+            Assert.Equal   ( complex.TypeCode, deserializedComplex.TypeCode );
+            Assert.Null    ( deserializedComplex.Parent );
+        }
+
+        [ Fact ]
+        public void CanReadObjectUsingConverter ( )
+        {
+            var surrogate = new BinarySerializerSurrogate ( );
+
+            surrogate.AddConverter ( ReadComplexObjectNameOnly, WriteComplexObjectNameOnly );
+
+            var complex = new ComplexObject { Name = "Name", Version = new Version ( "1.2.3.4" ), TypeCode = TypeCode.DBNull };
+
+            using var output = new MemoryStream ( );
+            using var writer = new BinaryWriterWith7BitEncoding ( output );
+
+            BinaryObjectWriter.Write ( writer, typeof ( ComplexObject ), complex, surrogate );
+
+            using var input  = new MemoryStream ( output.ToArray ( ) );
+            using var reader = new BinaryReaderWith7BitEncoding ( input );
+
+            var deserializedComplex = BinaryObjectReader.Read < ComplexObject > ( reader, surrogate );
+
+            Assert.NotNull ( deserializedComplex );
+            if ( deserializedComplex == null )
+                return;
+
+            Assert.Equal ( complex.Name, deserializedComplex.Name );
+            Assert.Equal ( default, deserializedComplex.Version   );
+            Assert.Equal ( default, deserializedComplex.TypeCode  );
+            Assert.Equal ( default, deserializedComplex.Parent    );
+        }
+
+        private static ComplexObject ReadComplexObjectNameOnly ( BinaryReader reader )
+        {
+            return new ComplexObject { Name = reader.Read < string > ( ) };
+        }
+
+        private static void WriteComplexObjectNameOnly ( BinaryWriter writer, ComplexObject complexObject )
+        {
+            writer.Write < string > ( complexObject.Name );
         }
     }
 }

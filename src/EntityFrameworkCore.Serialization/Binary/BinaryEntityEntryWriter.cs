@@ -12,13 +12,17 @@ namespace EntityFrameworkCore.Serialization.Binary
 {
     public class BinaryEntityEntryWriter : IEntityEntryWriter, IDisposable
     {
-        public BinaryEntityEntryWriter ( Stream       stream ) : this ( new BinaryWriterWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ) ) { }
-        public BinaryEntityEntryWriter ( BinaryWriter writer )
+        public BinaryEntityEntryWriter ( Stream       stream ) : this ( stream, null ) { }
+        public BinaryEntityEntryWriter ( BinaryWriter writer ) : this ( writer, null ) { }
+        public BinaryEntityEntryWriter ( Stream       stream, IBinaryObjectWriterSurrogate? surrogate ) : this ( new BinaryWriterWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ), surrogate ) { }
+        public BinaryEntityEntryWriter ( BinaryWriter writer, IBinaryObjectWriterSurrogate? surrogate )
         {
-            Writer = writer ?? throw new ArgumentNullException ( nameof ( writer ) );
+            Writer    = writer ?? throw new ArgumentNullException ( nameof ( writer ) );
+            Surrogate = surrogate;
         }
 
-        private BinaryWriter Writer { get; }
+        private BinaryWriter                  Writer    { get; }
+        private IBinaryObjectWriterSurrogate? Surrogate { get; }
 
         private IEntityType? EntityType { get; set; }
         private bool         EncodeType { get; set; }
@@ -84,7 +88,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             Writer.Write ( index );
 
             if ( ! isDefaultValue )
-                Writer.Write ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType, value );
+                Writer.Write ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType, value, Surrogate );
         }
 
         public void WriteNavigationState ( INavigation navigated )
@@ -108,7 +112,7 @@ namespace EntityFrameworkCore.Serialization.Binary
         {
             if ( Navigation != null )
             {
-                Writer.Write ( typeof ( byte [ ] ), Navigation );
+                Writer.Write < byte [ ] > ( Navigation );
 
                 Navigation = null;
             }
