@@ -54,7 +54,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 var elementType = type.GetElementType ( );
                 var array       = Array.CreateInstance ( elementType, length );
                 for ( var index = 0; index < array.Length; index++ )
-                    array.SetValue ( reader.Read ( elementType ), index );
+                    array.SetValue ( reader.Read ( elementType, surrogate ), index );
 
                 return array;
             }
@@ -65,7 +65,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 if ( ! reader.ReadBoolean ( ) )
                     return null;
 
-                return reader.Read ( nullableOfType );
+                return reader.Read ( nullableOfType, surrogate );
             }
 
             if ( ! type.IsValueType && ! reader.ReadBoolean ( ) )
@@ -74,12 +74,12 @@ namespace EntityFrameworkCore.Serialization.Binary
             if ( surrogate != null && surrogate.TryRead ( reader, type, out var value ) )
                 return value;
 
-            var instance = FormatterServices.GetUninitializedObject ( type );
+            var instance = type.GetUninitializedObject ( );
             var members  = type.GetSerializableMembers ( );
             var data     = new object? [ members.Length ];
 
             for ( var index = 0; index < members.Length; index++ )
-                data [ index ] = reader.Read ( members [ index ].GetSerializableType ( ) );
+                data [ index ] = reader.Read ( members [ index ].GetSerializableType ( ), surrogate );
 
             return FormatterServices.PopulateObjectMembers ( instance, members, data );
         }

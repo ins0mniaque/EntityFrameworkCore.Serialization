@@ -58,7 +58,7 @@ namespace EntityFrameworkCore.Serialization.Binary
 
                     var elementType = type.GetElementType ( );
                     foreach ( var element in array )
-                        writer.Write ( elementType, element );
+                        writer.Write ( elementType, element, surrogate );
                 }
                 else
                     writer.Write ( 0 );
@@ -69,7 +69,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 if ( nullableOfType != null )
                 {
                     writer.Write ( true );
-                    writer.Write ( nullableOfType, value );
+                    writer.Write ( nullableOfType, value, surrogate );
                 }
 
                 if ( ! type.IsValueType )
@@ -82,7 +82,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 var data    = FormatterServices.GetObjectData ( value, members );
 
                 for ( var index = 0; index < members.Length; index++ )
-                    writer.Write ( members [ index ].GetSerializableType ( ), data [ index ] );
+                    writer.Write ( members [ index ].GetSerializableType ( ), data [ index ], surrogate );
             }
             else
                 writer.Write ( false );

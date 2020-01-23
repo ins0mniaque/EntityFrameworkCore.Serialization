@@ -6,6 +6,21 @@ namespace EntityFrameworkCore.Serialization.Binary
 {
     public static class BinaryObject
     {
+        public static object GetUninitializedObject ( this Type type )
+        {
+            if ( type == null )
+                throw new ArgumentNullException ( nameof ( type ) );
+
+            try
+            {
+                return FormatterServices.GetUninitializedObject ( type );
+            }
+            catch ( Exception exception )
+            {
+                throw new SerializationException ( $"Could not create an object of type { type.FullName }", exception );
+            }
+        }
+
         public static Type GetSerializableType ( this MemberInfo member )
         {
             return member switch
