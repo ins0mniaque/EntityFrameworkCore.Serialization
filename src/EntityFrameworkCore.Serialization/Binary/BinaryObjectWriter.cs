@@ -70,6 +70,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 {
                     writer.Write ( true );
                     writer.Write ( nullableOfType, value, surrogate );
+                    return;
                 }
 
                 if ( ! type.IsValueType )
