@@ -66,7 +66,7 @@ namespace EntityFrameworkCore.Serialization
 
         private static Task WriteAsync ( Stream stream, Action < Stream > write )
         {
-            return WriteAsync ( stream, _ => { write ( stream ); return true; } );
+            return WriteAsync ( stream, stream => { write ( stream ); return true; } );
         }
 
         private static async Task < T > WriteAsync < T > ( Stream stream, Func < Stream, T > write )
