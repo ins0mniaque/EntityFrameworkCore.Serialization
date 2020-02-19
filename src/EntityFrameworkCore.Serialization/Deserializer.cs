@@ -19,10 +19,11 @@ namespace EntityFrameworkCore.Serialization
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( reader  == null ) throw new ArgumentNullException ( nameof ( reader  ) );
 
-            var finder      = new EntityEntryFinder ( context );
-            var entities    = new List < object > ( );
-            var properties  = new Dictionary < IProperty, object? > ( );
-            var collections = new List < CollectionEntry > ( );
+            var finder       = new EntityEntryFinder ( context );
+            var synchronizer = new TemporaryIdentitySynchronizer ( );
+            var entities     = new List < object > ( );
+            var properties   = new Dictionary < IProperty, object? > ( );
+            var collections  = new List < CollectionEntry > ( );
 
             while ( reader.ReadEntry ( ) )
             {
@@ -34,8 +35,19 @@ namespace EntityFrameworkCore.Serialization
                     properties [ property ] = value;
 
                 var entityEntry = finder.FindOrCreate ( entityType, properties );
+
                 foreach ( var entry in properties )
-                    entityEntry.SetProperty ( entry.Key, entry.Value, entityState );
+                {
+                    var propertyEntry = entityEntry.SetProperty ( entry.Key, entry.Value );
+
+                    if ( propertyEntry.Metadata.IsConcurrencyToken )
+                    {
+                        // TODO: Check original version...
+                    }
+
+                    if ( entityState == EntityState.Added && TemporaryIdentitySynchronizer.IsPartOfTemporaryIdentity ( entry.Key ) )
+                        synchronizer.SynchronizeTemporaryIdentity ( propertyEntry );
+                }
 
                 entityEntry.SetState ( entityState );
 
@@ -84,7 +96,7 @@ namespace EntityFrameworkCore.Serialization
                 if ( entityEntry != null )
                 {
                     while ( reader.ReadModifiedProperty ( out var property, out var value ) )
-                        entityEntry.SetDatabaseGeneratedProperty ( property, value );
+                        entityEntry.SetProperty ( property, value );
                 }
                 else
                 {
@@ -99,7 +111,7 @@ namespace EntityFrameworkCore.Serialization
                     if ( entityEntry != null )
                     {
                         foreach ( var modified in modifiedProperties )
-                            entityEntry.SetDatabaseGeneratedProperty ( modified.Property, modified.Value );
+                            entityEntry.SetProperty ( modified.Property, modified.Value );
                     }
                     else
                     {
@@ -126,21 +138,15 @@ namespace EntityFrameworkCore.Serialization
                 entityEntry.State = entityState;
         }
 
-        private static void SetProperty ( this EntityEntry entityEntry, IProperty property, object? value, EntityState entityState )
+        private static PropertyEntry SetProperty ( this EntityEntry entityEntry, IProperty property, object? value )
         {
             var propertyEntry = entityEntry.Property ( property );
-
-            if ( propertyEntry.Metadata.IsConcurrencyToken )
-            {
-                // TODO: Check original version...
-            }
 
             propertyEntry.OriginalValue = value;
             propertyEntry.CurrentValue  = value;
             propertyEntry.IsModified    = false;
 
-            if ( entityState == EntityState.Added && property.IsPrimaryKey ( ) && property.ValueGenerated.HasFlag ( ValueGenerated.OnAdd ) )
-                propertyEntry.IsTemporary = true;
+            return propertyEntry;
         }
 
         private static void SetModifiedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
@@ -149,15 +155,6 @@ namespace EntityFrameworkCore.Serialization
 
             propertyEntry.CurrentValue = value;
             propertyEntry.IsModified   = true;
-        }
-
-        private static void SetDatabaseGeneratedProperty ( this EntityEntry entityEntry, IProperty property, object? value )
-        {
-            var propertyEntry = entityEntry.Property ( property );
-
-            propertyEntry.OriginalValue = value;
-            propertyEntry.CurrentValue  = value;
-            propertyEntry.IsModified    = false;
         }
     }
 }
