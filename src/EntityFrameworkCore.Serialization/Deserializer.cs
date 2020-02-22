@@ -45,7 +45,7 @@ namespace EntityFrameworkCore.Serialization
                         // TODO: Check original version...
                     }
 
-                    if ( entityState == EntityState.Added && TemporaryIdentitySynchronizer.IsPartOfTemporaryIdentity ( entry.Key ) )
+                    if ( entityState != EntityState.Unchanged )
                         synchronizer.SynchronizeTemporaryIdentity ( propertyEntry );
                 }
 
