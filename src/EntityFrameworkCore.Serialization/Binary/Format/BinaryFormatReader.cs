@@ -1,19 +1,18 @@
 using System;
 using System.IO;
-using System.Runtime.Serialization;
 
-namespace EntityFrameworkCore.Serialization.Binary
+namespace EntityFrameworkCore.Serialization.Binary.Format
 {
-    public static class BinaryObjectReader
+    public static class BinaryFormatReader
     {
-        public static T Read < T > ( this BinaryReader reader, IBinaryObjectReaderSurrogate? surrogate = default )
+        public static T Read < T > ( this BinaryReader reader, IBinaryReaderSurrogate? surrogate = default )
         {
             #pragma warning disable CS8601 // Possible null reference assignment; T can be null
             return (T) reader.Read ( typeof ( T ), surrogate );
             #pragma warning restore CS8601 // Possible null reference assignment; T can be null
         }
 
-        public static object? Read ( this BinaryReader reader, Type type, IBinaryObjectReaderSurrogate? surrogate = default )
+        public static object? Read ( this BinaryReader reader, Type type, IBinaryReaderSurrogate? surrogate = default )
         {
             if ( reader == null ) throw new ArgumentNullException ( nameof ( reader ) );
             if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
@@ -81,32 +80,42 @@ namespace EntityFrameworkCore.Serialization.Binary
             for ( var index = 0; index < members.Length; index++ )
                 data [ index ] = reader.Read ( members [ index ].GetSerializableType ( ), surrogate );
 
-            return FormatterServices.PopulateObjectMembers ( instance, members, data );
+            return members.SetObjectData ( instance, data );
         }
 
-        public static bool TryReadByte ( this BinaryReader reader, out byte value )
+        public static T Read < T > ( this IBinaryReader reader )
         {
             if ( reader == null )
                 throw new ArgumentNullException ( nameof ( reader ) );
 
-            if ( ! reader.BaseStream.CanSeek )
-                return reader.TryReadByteWithoutSeeking ( out value );
-
-            if ( reader.BaseStream.Position == reader.BaseStream.Length )
-            {
-                value = default;
-                return false;
-            }
-
-            value = reader.ReadByte ( );
-            return true;
+            return (T) reader.Read ( typeof ( T ) )!;
         }
 
-        private static bool TryReadByteWithoutSeeking ( this BinaryReader reader, out byte value )
+        public static bool TryReadByte ( this IBinaryReader reader, out byte value )
+        {
+            if ( reader == null )
+                throw new ArgumentNullException ( nameof ( reader ) );
+
+            if ( reader is IStreamBinaryReader streamReader && streamReader.BaseStream.CanSeek )
+            {
+                if ( streamReader.BaseStream.Position == streamReader.BaseStream.Length )
+                {
+                    value = default;
+                    return false;
+                }
+
+                value = reader.Read < byte > ( );
+                return true;
+            }
+
+            return reader.TryReadByteWithoutSeeking ( out value );
+        }
+
+        private static bool TryReadByteWithoutSeeking ( this IBinaryReader reader, out byte value )
         {
             try
             {
-                value = reader.ReadByte ( );
+                value = reader.Read < byte > ( );
                 return true;
             }
             catch ( EndOfStreamException )

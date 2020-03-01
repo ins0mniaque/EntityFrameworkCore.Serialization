@@ -1,17 +1,16 @@
 using System;
 using System.IO;
-using System.Runtime.Serialization;
 
-namespace EntityFrameworkCore.Serialization.Binary
+namespace EntityFrameworkCore.Serialization.Binary.Format
 {
-    public static class BinaryObjectWriter
+    public static class BinaryFormatWriter
     {
-        public static void Write < T > ( this BinaryWriter writer, object? value, IBinaryObjectWriterSurrogate? surrogate = default )
+        public static void Write < T > ( this BinaryWriter writer, object? value, IBinaryWriterSurrogate? surrogate = default )
         {
             writer.Write ( typeof ( T ), value, surrogate );
         }
 
-        public static void Write ( this BinaryWriter writer, Type type, object? value, IBinaryObjectWriterSurrogate? surrogate = default )
+        public static void Write ( this BinaryWriter writer, Type type, object? value, IBinaryWriterSurrogate? surrogate = default )
         {
             if ( writer == null ) throw new ArgumentNullException ( nameof ( writer ) );
             if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
@@ -80,13 +79,21 @@ namespace EntityFrameworkCore.Serialization.Binary
                     return;
 
                 var members = type.GetSerializableMembers ( );
-                var data    = FormatterServices.GetObjectData ( value, members );
+                var data    = members.GetObjectData ( value );
 
                 for ( var index = 0; index < members.Length; index++ )
                     writer.Write ( members [ index ].GetSerializableType ( ), data [ index ], surrogate );
             }
             else
                 writer.Write ( false );
+        }
+
+        public static void Write < T > ( this IBinaryWriter writer, T value )
+        {
+            if ( writer == null )
+                throw new ArgumentNullException ( nameof ( writer ) );
+
+            writer.Write ( typeof ( T ), value );
         }
     }
 }

@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace EntityFrameworkCore.Serialization.Binary
+namespace EntityFrameworkCore.Serialization.Binary.IO
 {
     public class BinaryReaderWith7BitEncoding : BinaryReader
     {

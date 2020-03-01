@@ -1,31 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 using EntityFrameworkCore.Serialization.Binary.Internal;
+using EntityFrameworkCore.Serialization.Binary.Format;
 
 namespace EntityFrameworkCore.Serialization.Binary
 {
     public class BinaryEntityEntryReader : IEntityEntryReader
     {
-        public BinaryEntityEntryReader ( Stream       stream ) : this ( stream, null ) { }
-        public BinaryEntityEntryReader ( BinaryReader reader ) : this ( reader, null ) { }
-        public BinaryEntityEntryReader ( Stream       stream, IBinaryObjectReaderSurrogate? surrogate ) : this ( new BinaryReaderWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ), surrogate ) { }
-        public BinaryEntityEntryReader ( BinaryReader reader, IBinaryObjectReaderSurrogate? surrogate )
+        public BinaryEntityEntryReader ( IBinaryReader reader )
         {
-            Reader    = reader ?? throw new ArgumentNullException ( nameof ( reader ) );
-            Surrogate = surrogate;
+            Reader = reader ?? throw new ArgumentNullException ( nameof ( reader ) );
         }
 
-        private BinaryReader                  Reader    { get; }
-        private IBinaryObjectReaderSurrogate? Surrogate { get; }
+        private IBinaryReader Reader { get; }
 
         private IEntityType? EntityType  { get; set; }
         private byte         EntityState { get; set; }
@@ -58,7 +52,7 @@ namespace EntityFrameworkCore.Serialization.Binary
 
             if ( ( EntityState & BinaryEntityEntry.EntityTypeFlag ) == BinaryEntityEntry.EntityTypeFlag )
             {
-                var shortName = Reader.ReadString ( );
+                var shortName = Reader.Read < string > ( );
                 EntityType  = model.GetEntityTypes ( ).First ( type => type.ShortName ( ) == shortName );
                 EntityState = (byte) ( EntityState & ~BinaryEntityEntry.EntityTypeFlag );
             }
@@ -71,7 +65,7 @@ namespace EntityFrameworkCore.Serialization.Binary
         public bool ReadProperty ( [ NotNullWhen ( true ) ] out IProperty? property, out object? value )
         {
             if ( ReadIndex == null )
-                ReadIndex = Reader.ReadInt32 ( );
+                ReadIndex = Reader.Read < int > ( );
 
             var index = ReadIndex.Value;
 
@@ -92,7 +86,7 @@ namespace EntityFrameworkCore.Serialization.Binary
         public bool ReadModifiedProperty ( [ NotNullWhen ( true ) ] out IProperty? property, out object? value )
         {
             if ( ReadIndex == null )
-                ReadIndex = Reader.ReadInt32 ( );
+                ReadIndex = Reader.Read < int > ( );
 
             var index = ReadIndex.Value;
 
@@ -122,7 +116,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             property = EnsureEntityType ( ).FindProperty ( index );
 
             if ( ! isDefaultValue )
-                value = Reader.Read ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType, Surrogate );
+                value = Reader.Read ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType );
             else
                 value = property.GetDefaultValue ( );
         }
@@ -143,7 +137,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             }
 
             if ( ReadIndex == null )
-                ReadIndex = Reader.ReadInt32 ( );
+                ReadIndex = Reader.Read < int > ( );
 
             var index = ReadIndex.Value;
 

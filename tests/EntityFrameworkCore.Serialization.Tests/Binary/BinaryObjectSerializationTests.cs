@@ -3,6 +3,8 @@ using System.IO;
 
 using Xunit;
 
+using EntityFrameworkCore.Serialization.Binary.Format;
+
 namespace EntityFrameworkCore.Serialization.Binary.Tests
 {
     public class BinaryObjectSerializationTests
@@ -19,9 +21,9 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
         public void CanWriteNullString ( )
         {
             using var stream = new MemoryStream ( );
-            using var writer = new BinaryWriterWith7BitEncoding ( stream );
+            using var writer = new IO.BinaryWriterWith7BitEncoding ( stream );
 
-            BinaryObjectWriter.Write < string > ( writer, null );
+            BinaryFormatWriter.Write < string > ( writer, null );
 
             Assert.Equal ( stream.ToArray ( ), new byte [ ] { 0 } );
         }
@@ -32,9 +34,9 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             var complex = (ComplexObject?) null;
 
             using var stream = new MemoryStream ( );
-            using var writer = new BinaryWriterWith7BitEncoding ( stream );
+            using var writer = new IO.BinaryWriterWith7BitEncoding ( stream );
 
-            BinaryObjectWriter.Write < ComplexObject > ( writer, complex );
+            BinaryFormatWriter.Write < ComplexObject > ( writer, complex );
 
             Assert.Equal ( stream.ToArray ( ), new byte [ ] { 0 } );
         }
@@ -45,9 +47,9 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             var complex = new ComplexObject { Name = "Name", Version = new Version ( "1.2.3.4" ), TypeCode = TypeCode.DBNull };
 
             using var stream = new MemoryStream ( );
-            using var writer = new BinaryWriterWith7BitEncoding ( stream );
+            using var writer = new IO.BinaryWriterWith7BitEncoding ( stream );
 
-            BinaryObjectWriter.Write < ComplexObject > ( writer, complex );
+            BinaryFormatWriter.Write < ComplexObject > ( writer, complex );
 
             Assert.Equal ( stream.ToArray ( ),
                            new byte [ ] { 1, 1, 4, (byte) 'N', (byte) 'a', (byte) 'm', (byte) 'e',
@@ -62,14 +64,14 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
             var complex = new ComplexObject { Name = "Name", Version = new Version ( "1.2.3.4" ), TypeCode = TypeCode.DBNull };
 
             using var output = new MemoryStream ( );
-            using var writer = new BinaryWriterWith7BitEncoding ( output );
+            using var writer = new IO.BinaryWriterWith7BitEncoding ( output );
 
-            BinaryObjectWriter.Write ( writer, typeof ( ComplexObject ), complex );
+            BinaryFormatWriter.Write ( writer, typeof ( ComplexObject ), complex );
 
             using var input  = new MemoryStream ( output.ToArray ( ) );
-            using var reader = new BinaryReaderWith7BitEncoding ( input );
+            using var reader = new IO.BinaryReaderWith7BitEncoding ( input );
 
-            var deserializedComplex = BinaryObjectReader.Read < ComplexObject > ( reader );
+            var deserializedComplex = BinaryFormatReader.Read < ComplexObject > ( reader );
 
             Assert.NotNull ( deserializedComplex );
             if ( deserializedComplex == null )
@@ -84,21 +86,21 @@ namespace EntityFrameworkCore.Serialization.Binary.Tests
         [ Fact ]
         public void CanReadObjectUsingConverter ( )
         {
-            var surrogate = new BinarySerializerSurrogate ( );
+            var surrogate = new BinaryFormatSurrogate ( );
 
             surrogate.AddConverter ( ReadComplexObjectNameOnly, WriteComplexObjectNameOnly );
 
             var complex = new ComplexObject { Name = "Name", Version = new Version ( "1.2.3.4" ), TypeCode = TypeCode.DBNull };
 
             using var output = new MemoryStream ( );
-            using var writer = new BinaryWriterWith7BitEncoding ( output );
+            using var writer = new IO.BinaryWriterWith7BitEncoding ( output );
 
-            BinaryObjectWriter.Write ( writer, typeof ( ComplexObject ), complex, surrogate );
+            BinaryFormatWriter.Write ( writer, typeof ( ComplexObject ), complex, surrogate );
 
             using var input  = new MemoryStream ( output.ToArray ( ) );
-            using var reader = new BinaryReaderWith7BitEncoding ( input );
+            using var reader = new IO.BinaryReaderWith7BitEncoding ( input );
 
-            var deserializedComplex = BinaryObjectReader.Read < ComplexObject > ( reader, surrogate );
+            var deserializedComplex = BinaryFormatReader.Read < ComplexObject > ( reader, surrogate );
 
             Assert.NotNull ( deserializedComplex );
             if ( deserializedComplex == null )

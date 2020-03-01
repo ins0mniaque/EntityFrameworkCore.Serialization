@@ -2,10 +2,20 @@ using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace EntityFrameworkCore.Serialization.Binary
+namespace EntityFrameworkCore.Serialization.Binary.Format
 {
-    public static class BinaryObject
+    public static class BinaryFormatterServices
     {
+        public static object? [ ] GetObjectData ( this MemberInfo [ ] members, object value )
+        {
+            return FormatterServices.GetObjectData ( value, members );
+        }
+
+        public static object SetObjectData ( this MemberInfo [ ] members, object value, object? [ ] data )
+        {
+            return FormatterServices.PopulateObjectMembers ( value, members, data );
+        }
+
         public static object GetUninitializedObject ( this Type type )
         {
             if ( type == null )

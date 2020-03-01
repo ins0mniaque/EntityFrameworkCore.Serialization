@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace EntityFrameworkCore.Serialization.Binary
+namespace EntityFrameworkCore.Serialization.Binary.Format
 {
-    public class BinarySerializerSurrogate : IBinaryObjectReaderSurrogate, IBinaryObjectWriterSurrogate
+    public class BinaryFormatSurrogate : IBinaryFormatSurrogate
     {
         private readonly Dictionary < Type, Converter > converters = new Dictionary < Type, Converter > ( );
 

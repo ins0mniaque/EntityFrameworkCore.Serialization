@@ -1,28 +1,22 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 using EntityFrameworkCore.Serialization.Binary.Internal;
+using EntityFrameworkCore.Serialization.Binary.Format;
 
 namespace EntityFrameworkCore.Serialization.Binary
 {
     public class BinaryEntityEntryWriter : IEntityEntryWriter, IDisposable
     {
-        public BinaryEntityEntryWriter ( Stream       stream ) : this ( stream, null ) { }
-        public BinaryEntityEntryWriter ( BinaryWriter writer ) : this ( writer, null ) { }
-        public BinaryEntityEntryWriter ( Stream       stream, IBinaryObjectWriterSurrogate? surrogate ) : this ( new BinaryWriterWith7BitEncoding ( stream, new UTF8Encoding ( false, true ), true ), surrogate ) { }
-        public BinaryEntityEntryWriter ( BinaryWriter writer, IBinaryObjectWriterSurrogate? surrogate )
+        public BinaryEntityEntryWriter ( IBinaryWriter writer )
         {
-            Writer    = writer ?? throw new ArgumentNullException ( nameof ( writer ) );
-            Surrogate = surrogate;
+            Writer = writer ?? throw new ArgumentNullException ( nameof ( writer ) );
         }
 
-        private BinaryWriter                  Writer    { get; }
-        private IBinaryObjectWriterSurrogate? Surrogate { get; }
+        private IBinaryWriter Writer { get; }
 
         private IEntityType? EntityType { get; set; }
         private bool         EncodeType { get; set; }
@@ -88,7 +82,7 @@ namespace EntityFrameworkCore.Serialization.Binary
             Writer.Write ( index );
 
             if ( ! isDefaultValue )
-                Writer.Write ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType, value, Surrogate );
+                Writer.Write ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType, value );
         }
 
         public void WriteNavigationState ( INavigation navigated )
@@ -112,7 +106,7 @@ namespace EntityFrameworkCore.Serialization.Binary
         {
             if ( Navigation != null )
             {
-                Writer.Write < byte [ ] > ( Navigation );
+                Writer.Write ( Navigation );
 
                 Navigation = null;
             }
@@ -128,8 +122,8 @@ namespace EntityFrameworkCore.Serialization.Binary
             {
                 if ( disposing )
                 {
-                    Writer.Write ( BinaryEntityEntry.EndOfStreamMarker );
-                    Writer.Flush ( );
+                    Writer.Write   ( BinaryEntityEntry.EndOfStreamMarker );
+                    Writer.Dispose ( );
                 }
 
                 disposed = true;

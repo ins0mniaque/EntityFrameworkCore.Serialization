@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text;
 
-namespace EntityFrameworkCore.Serialization.Binary
+namespace EntityFrameworkCore.Serialization.Binary.IO
 {
     public class BinaryWriterWith7BitEncoding : BinaryWriter
     {
