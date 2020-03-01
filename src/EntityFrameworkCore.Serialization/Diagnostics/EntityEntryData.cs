@@ -3,10 +3,10 @@ using System.Collections.Generic;
 
 using Microsoft.EntityFrameworkCore;
 
-namespace EntityFrameworkCore.Serialization.Serializable
+namespace EntityFrameworkCore.Serialization.Diagnostics
 {
     [ Serializable ]
-    public partial class SerializableEntry
+    public partial class EntityEntryData
     {
         public string?     EntityType  { get; set; }
         public EntityState EntityState { get; set; }

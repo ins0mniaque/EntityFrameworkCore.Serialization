@@ -2,8 +2,7 @@ using System.IO;
 
 namespace EntityFrameworkCore.Serialization.Binary
 {
-    public class BinaryDbContextSerializer : IDbContextSerializer   < Stream >,
-                                             IDbContextDeserializer < Stream >
+    public class BinaryDbContextSerializer : IDbContextSerializer < Stream >
     {
         private readonly IBinaryObjectReaderSurrogate? readerSurrogate;
         private readonly IBinaryObjectWriterSurrogate? writerSurrogate;

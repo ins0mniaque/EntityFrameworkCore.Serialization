@@ -22,7 +22,7 @@ namespace EntityFrameworkCore.Serialization.Tests
         public void SerializeThrowsArgumentNullExceptionOnNullContext ( )
         {
             var context = (DbContext?) null;
-            var writer  = new Serializable.EntityEntryWriter ( new List < Serializable.SerializableEntry > ( ) );
+            var writer  = new Diagnostics.EntityEntryWriter ( new List < Diagnostics.EntityEntryData > ( ) );
 
             Assert.Throws < ArgumentNullException > ( ( ) => context!.Serialize ( writer ) );
         }
@@ -39,7 +39,7 @@ namespace EntityFrameworkCore.Serialization.Tests
         [ Fact ]
         public void CanSerialize ( )
         {
-            var serializer = new Serializable.DbContextSerializer ( );
+            var serializer = new Diagnostics.DbContextSerializer ( );
 
             using var context = fixture.CreateDbContext ( );
 
@@ -64,7 +64,7 @@ namespace EntityFrameworkCore.Serialization.Tests
         [ Fact ]
         public void CanSerializeChanges ( )
         {
-            var serializer = new Serializable.DbContextSerializer ( );
+            var serializer = new Diagnostics.DbContextSerializer ( );
 
             using var context = fixture.CreateDbContext ( );
 
@@ -109,7 +109,7 @@ namespace EntityFrameworkCore.Serialization.Tests
         [ Fact ]
         public void DeserializeLoadsNavigationProperties ( )
         {
-            var serializer = new Serializable.DbContextSerializer ( );
+            var serializer = new Diagnostics.DbContextSerializer ( );
 
             using var context = fixture.CreateDbContext ( );
 
@@ -133,7 +133,7 @@ namespace EntityFrameworkCore.Serialization.Tests
         [ Fact ]
         public void CanCompleteServerClientWorkflow ( )
         {
-            var serializer = new Serializable.DbContextSerializer ( );
+            var serializer = new Diagnostics.DbContextSerializer ( );
 
             using var fixture = new Fixture ( );
 
@@ -247,7 +247,7 @@ namespace EntityFrameworkCore.Serialization.Tests
         [ Fact ]
         public void CanSerializeNorthwindDatabase ( )
         {
-            var serializer = new Serializable.DbContextSerializer ( );
+            var serializer = new Diagnostics.DbContextSerializer ( );
 
             using var serverContext = fixture.CreateDbContext ( );
 

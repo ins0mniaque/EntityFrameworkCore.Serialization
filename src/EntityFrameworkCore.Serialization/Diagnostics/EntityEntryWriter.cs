@@ -5,25 +5,25 @@ using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace EntityFrameworkCore.Serialization.Serializable
+namespace EntityFrameworkCore.Serialization.Diagnostics
 {
     public class EntityEntryWriter : IEntityEntryWriter
     {
-        public EntityEntryWriter ( ICollection < SerializableEntry > entries )
+        public EntityEntryWriter ( ICollection < EntityEntryData > entries )
         {
             Entries = entries ?? throw new ArgumentNullException ( nameof ( entries ) );
         }
 
-        private ICollection < SerializableEntry > Entries { get; }
+        private ICollection < EntityEntryData > Entries { get; }
 
-        private SerializableEntry? CurrentEntry { get; set; }
+        private EntityEntryData? CurrentEntry { get; set; }
 
-        private SerializableEntry EnsureCurrentEntry ( [CallerMemberName] string? writeMethod = null )
+        private EntityEntryData EnsureCurrentEntry ( [CallerMemberName] string? writeMethod = null )
         {
             return CurrentEntry ?? throw new InvalidOperationException ( $"{ nameof ( WriteStartEntry ) } was not called prior to { writeMethod }" );
         }
 
-        public void WriteStartEntry ( ) => CurrentEntry = new SerializableEntry ( );
+        public void WriteStartEntry ( ) => CurrentEntry = new EntityEntryData ( );
 
         public void WriteEntityType  ( IEntityType entityType  ) => EnsureCurrentEntry ( ).EntityType  = entityType.ShortName ( );
         public void WriteEntityState ( EntityState entityState ) => EnsureCurrentEntry ( ).EntityState = entityState;

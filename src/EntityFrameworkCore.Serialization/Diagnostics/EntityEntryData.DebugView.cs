@@ -4,11 +4,11 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace EntityFrameworkCore.Serialization.Serializable
+namespace EntityFrameworkCore.Serialization.Diagnostics
 {
     [ DebuggerDisplay   ( "{DebuggerDisplay(),nq}" ) ]
     [ DebuggerTypeProxy ( typeof ( DebugView )     ) ]
-    public partial class SerializableEntry
+    public partial class EntityEntryData
     {
         private string DebuggerDisplay ( ) => $"{ EntityType } ({ EntityState }): { GuessKey ( EntityType ?? string.Empty, Properties ) }";
 
@@ -30,14 +30,14 @@ namespace EntityFrameworkCore.Serialization.Serializable
         internal class DebugView
         {
             [ DebuggerBrowsable ( DebuggerBrowsableState.Never ) ]
-            private readonly SerializableEntry @this;
+            private readonly EntityEntryData @this;
 
-            public DebugView ( SerializableEntry entry ) => @this = entry;
+            public DebugView ( EntityEntryData entry ) => @this = entry;
 
             [ DebuggerBrowsable ( DebuggerBrowsableState.RootHidden ) ]
             public Property [ ] Properties => GetProperties ( @this ).ToArray ( );
 
-            private static IEnumerable < Property > GetProperties ( SerializableEntry @this )
+            private static IEnumerable < Property > GetProperties ( EntityEntryData @this )
             {
                 if ( @this.Properties != null )
                     foreach ( var entry in @this.Properties )

@@ -7,11 +7,11 @@ using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace EntityFrameworkCore.Serialization.Serializable
+namespace EntityFrameworkCore.Serialization.Diagnostics
 {
     public class EntityEntryReader : IEntityEntryReader
     {
-        public EntityEntryReader ( IEnumerable < SerializableEntry > entries )
+        public EntityEntryReader ( IEnumerable < EntityEntryData > entries )
         {
             if ( entries == null )
                 throw new ArgumentNullException ( nameof ( entries ) );
@@ -19,7 +19,7 @@ namespace EntityFrameworkCore.Serialization.Serializable
             Entries = entries.GetEnumerator ( );
         }
 
-        private IEnumerator < SerializableEntry > Entries { get; }
+        private IEnumerator < EntityEntryData > Entries { get; }
 
         private IEntityType?                                      EntityType         { get; set; }
         private IEnumerator < KeyValuePair < string, object? > >? Property           { get; set; }
