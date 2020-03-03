@@ -18,7 +18,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
             if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
 
             if ( type.IsEnum )
-                type = Enum.GetUnderlyingType ( type );
+                return Enum.ToObject ( type, reader.Read ( Enum.GetUnderlyingType ( type ), surrogate ) );
 
             switch ( Type.GetTypeCode ( type ) )
             {
