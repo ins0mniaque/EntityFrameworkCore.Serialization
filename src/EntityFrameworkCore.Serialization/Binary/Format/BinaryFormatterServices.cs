@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
 namespace EntityFrameworkCore.Serialization.Binary.Format
@@ -49,23 +51,50 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
             if ( type.IsSerializable )
                 return FormatterServices.GetSerializableMembers ( type );
 
-            var fields       = type.GetFields ( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-            var serializable = 0;
-            for ( var index = 0; index < fields.Length; index++ )
-                if ( ( fields [ index ].Attributes & FieldAttributes.NotSerialized ) != FieldAttributes.NotSerialized )
-                    serializable++;
+            var typeFields = type.GetFields ( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
+            var parentType = type.BaseType;
 
-            if ( serializable == fields.Length )
-                return fields;
+            if ( ! parentType.HasBaseClass ( ) && typeFields.AreAllSerializable ( ) )
+                return typeFields;
 
-            var serializableFields = new FieldInfo [ serializable ];
+            var fields = new List < MemberInfo > ( typeFields.Length );
 
-            serializable = 0;
-            for ( var index = 0; index < fields.Length; index++ )
-                if ( ( fields [ index ].Attributes & FieldAttributes.NotSerialized ) != FieldAttributes.NotSerialized )
-                    serializableFields [ serializable++ ] = fields [ index ];
+            foreach ( var field in typeFields )
+                if ( field.IsSerializable ( ) )
+                    fields.Add ( field );
 
-            return serializableFields;
+            while ( parentType.HasBaseClass ( ) )
+            {
+                foreach ( var field in parentType.GetFields ( BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ) )
+                    if ( field.IsSerializable ( ) )
+                        fields.Add ( field );
+
+                parentType = parentType.BaseType;
+            }
+
+            return fields.ToArray ( );
+        }
+
+        [ MethodImpl ( MethodImplOptions.AggressiveInlining ) ]
+        private static bool AreAllSerializable ( this FieldInfo [ ] fields )
+        {
+            foreach ( var field in fields )
+                if ( ! field.IsSerializable ( ) )
+                    return false;
+
+            return true;
+        }
+
+        [ MethodImpl ( MethodImplOptions.AggressiveInlining ) ]
+        private static bool IsSerializable ( this FieldInfo field )
+        {
+            return ! field.IsNotSerialized && ! typeof ( Delegate ).IsAssignableFrom ( field.FieldType );
+        }
+
+        [ MethodImpl ( MethodImplOptions.AggressiveInlining ) ]
+        private static bool HasBaseClass ( this Type type )
+        {
+            return type != null && type != typeof ( object );
         }
     }
 }
