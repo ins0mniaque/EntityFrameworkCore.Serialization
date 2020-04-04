@@ -7,9 +7,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
     {
         public static T Read < T > ( this BinaryReader reader, IBinaryReaderSurrogate? surrogate = default )
         {
-            #pragma warning disable CS8601 // Possible null reference assignment; T can be null
-            return (T) reader.Read ( typeof ( T ), surrogate );
-            #pragma warning restore CS8601 // Possible null reference assignment; T can be null
+            return (T) reader.Read ( typeof ( T ), surrogate )!;
         }
 
         public static object? Read ( this BinaryReader reader, Type type, IBinaryReaderSurrogate? surrogate = default )
