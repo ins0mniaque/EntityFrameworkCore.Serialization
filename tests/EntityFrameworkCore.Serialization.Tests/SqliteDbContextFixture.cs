@@ -29,7 +29,7 @@ namespace EntityFrameworkCore.Serialization.Tests
         public TDbContext CreateDbContext             ( ) => Factory ( GetDbContextOptions ( connection   ) );
         public TDbContext CreateDisconnectedDbContext ( ) => Factory ( GetDbContextOptions ( disconnected ) );
 
-        private DbContextOptions < TDbContext > GetDbContextOptions ( SqliteConnection connection )
+        private static DbContextOptions < TDbContext > GetDbContextOptions ( SqliteConnection connection )
         {
             return new DbContextOptionsBuilder < TDbContext > ( ).UseSqlite ( connection )
                                                                  .Options;
