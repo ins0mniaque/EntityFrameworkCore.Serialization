@@ -14,7 +14,7 @@ namespace EntityFrameworkCore.Serialization
 {
     public static partial class Deserializer
     {
-        public static IReadOnlyList < object > Deserialize ( this DbContext context, IEntityEntryReader reader )
+        public static IReadOnlyList < object > Deserialize ( this DbContext context, IEntityEntryReader reader, ResolveConflict? resolveConflict = null )
         {
             if ( context == null ) throw new ArgumentNullException ( nameof ( context ) );
             if ( reader  == null ) throw new ArgumentNullException ( nameof ( reader  ) );
@@ -35,6 +35,17 @@ namespace EntityFrameworkCore.Serialization
                     properties [ property ] = value;
 
                 var entityEntry = finder.FindOrCreate ( entityType, properties );
+                var conflict    = resolveConflict   != null &&
+                                  entityEntry.State != EntityState.Detached ? resolveConflict ( entityEntry, entityState, properties ) :
+                                                                              ConflictResolution.OverwriteExistingEntry;
+
+                if ( conflict == ConflictResolution.KeepExistingEntry )
+                {
+                    while ( reader.ReadModifiedProperty ( out _, out _ ) );
+                    while ( reader.ReadNavigationState  ( out _ ) );
+
+                    continue;
+                }
 
                 foreach ( var entry in properties )
                 {
