@@ -18,7 +18,7 @@ namespace EntityFrameworkCore.Serialization
         [ SuppressMessage ( "Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Property" ) ]
         void WriteModifiedProperty ( IProperty property, object? value );
 
-        void WriteNavigationState ( INavigation navigated );
+        void WriteNavigationState ( INavigationBase navigated );
 
         void WriteEndEntry ( );
     }

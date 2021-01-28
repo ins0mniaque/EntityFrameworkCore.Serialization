@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace EntityFrameworkCore.Serialization.Tests
@@ -103,7 +102,7 @@ namespace EntityFrameworkCore.Serialization.Tests
             if ( value == null )
                 return 0;
 
-            if ( ! navigation.Metadata.IsCollection ( ) )
+            if ( ! navigation.Metadata.IsCollection )
                 return 1;
 
             var count = 0;

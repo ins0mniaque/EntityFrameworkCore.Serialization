@@ -28,7 +28,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Internal
             return ( index >> 2 ) - 1;
         }
 
-        public static int EncodeIndex ( this INavigation navigation )
+        public static int EncodeIndex ( this INavigationBase navigation )
         {
             #pragma warning disable EF1001 // Internal EF Core API usage.
             return navigation.GetIndex ( );

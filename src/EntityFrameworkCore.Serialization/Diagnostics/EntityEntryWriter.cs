@@ -52,7 +52,7 @@ namespace EntityFrameworkCore.Serialization.Diagnostics
             entry.ModifiedProperties [ property.Name ] = value;
         }
 
-        public void WriteNavigationState ( INavigation navigated )
+        public void WriteNavigationState ( INavigationBase navigated )
         {
             if ( navigated == null )
                 throw new ArgumentNullException ( nameof ( navigated ) );

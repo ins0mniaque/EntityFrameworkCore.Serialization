@@ -85,7 +85,7 @@ namespace EntityFrameworkCore.Serialization.Binary
                 Writer.Write ( Nullable.GetUnderlyingType ( property.ClrType ) ?? property.ClrType, value );
         }
 
-        public void WriteNavigationState ( INavigation navigated )
+        public void WriteNavigationState ( INavigationBase navigated )
         {
             if ( navigated == null )
                 throw new ArgumentNullException ( nameof ( navigated ) );
