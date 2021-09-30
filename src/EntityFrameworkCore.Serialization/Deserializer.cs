@@ -44,6 +44,8 @@ namespace EntityFrameworkCore.Serialization
                     while ( reader.ReadModifiedProperty ( out _, out _ ) );
                     while ( reader.ReadNavigationState  ( out _ ) );
 
+                    entities.Add ( entityEntry.Entity );
+
                     continue;
                 }
 
