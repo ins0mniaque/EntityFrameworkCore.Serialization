@@ -51,7 +51,7 @@ namespace EntityFrameworkCore.Serialization.Internal
             #pragma warning disable EF1001 // Internal EF Core API usage.
             return Context.GetDependencies ( )
                           .StateManager
-                          .CreateEntry   ( ImmutableDictionary < string, object >.Empty, entityType )
+                          .CreateEntry   ( ImmutableDictionary < string, object? >.Empty, entityType )
                           .ToEntityEntry ( );
             #pragma warning restore EF1001 // Internal EF Core API usage.
         }

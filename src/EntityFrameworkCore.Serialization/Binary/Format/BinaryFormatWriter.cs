@@ -55,7 +55,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
 
                     writer.Write ( array.Length + 1 );
 
-                    var elementType = type.GetElementType ( );
+                    var elementType = type.GetElementType ( )!;
                     foreach ( var element in array )
                         writer.Write ( elementType, element, surrogate );
                 }

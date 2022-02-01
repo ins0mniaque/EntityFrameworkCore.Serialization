@@ -80,7 +80,7 @@ namespace EntityFrameworkCore.Serialization
             foreach ( var collection in collections )
             {
                 if ( collection.CurrentValue == null )
-                    collection.CurrentValue = (IEnumerable) collection.Metadata.GetCollectionAccessor ( ).Create ( );
+                    collection.CurrentValue = (IEnumerable) collection.Metadata.GetCollectionAccessor ( )!.Create ( );
 
                 collection.IsLoaded = true;
             }

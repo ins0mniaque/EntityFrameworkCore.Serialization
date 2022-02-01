@@ -53,25 +53,6 @@ namespace EntityFrameworkCore.Serialization.Binary.IO
             return count;
         }
 
-        protected long Read7BitEncodedInt64 ( )
-        {
-            long count = 0;
-            int  shift = 0;
-            byte b;
-            do
-            {
-                if ( shift == 10 * 7 )
-                    throw TooManyBytesError ( typeof ( long ) );
-
-                b = ReadByte ( );
-                count |= (long) ( b & 0x7F ) << shift;
-                shift += 7;
-            }
-            while ( ( b & 0x80 ) != 0 );
-
-            return count;
-        }
-
         protected ulong Read7BitEncodedUInt64 ( )
         {
             ulong count = 0;

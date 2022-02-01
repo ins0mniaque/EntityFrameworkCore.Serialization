@@ -90,8 +90,8 @@ namespace EntityFrameworkCore.Serialization.Tests
             return 0;
         }
 
-        private static object [ ] GetOriginalValues ( EntityEntry entry ) => entry.Properties.Select ( property => property.OriginalValue ).ToArray ( );
-        private static object [ ] GetCurrentValues  ( EntityEntry entry ) => entry.Properties.Select ( property => property.CurrentValue  ).ToArray ( );
+        private static object? [ ] GetOriginalValues ( EntityEntry entry ) => entry.Properties.Select ( property => property.OriginalValue ).ToArray ( );
+        private static object? [ ] GetCurrentValues  ( EntityEntry entry ) => entry.Properties.Select ( property => property.CurrentValue  ).ToArray ( );
 
         private static int GetReferenceCount ( NavigationEntry navigation )
         {

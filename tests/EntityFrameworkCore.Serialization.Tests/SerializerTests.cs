@@ -152,7 +152,10 @@ namespace EntityFrameworkCore.Serialization.Tests
                            EntityEntryComparer.Instance );
 
             customer = clientContext.Find < Customer > ( customer.CustomerID );
-            customer.ContactName = "Would prefer not to be contacted";
+
+            Assert.NotNull ( customer );
+
+            customer!.ContactName = "Would prefer not to be contacted";
 
             customer.Orders.RemoveAt ( 3 );
 
@@ -209,7 +212,10 @@ namespace EntityFrameworkCore.Serialization.Tests
                            EntityEntryComparer.Instance );
 
             customer = clientContext.Find < Customer > ( customer.CustomerID );
-            customer.ContactName = "Would prefer not to be contacted";
+
+            Assert.NotNull ( customer );
+
+            customer!.ContactName = "Would prefer not to be contacted";
 
             customer.Orders.RemoveAt ( 3 );
 

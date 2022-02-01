@@ -16,7 +16,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
             if ( type   == null ) throw new ArgumentNullException ( nameof ( type   ) );
 
             if ( type.IsEnum )
-                return Enum.ToObject ( type, reader.Read ( Enum.GetUnderlyingType ( type ), surrogate ) );
+                return Enum.ToObject ( type, reader.Read ( Enum.GetUnderlyingType ( type ), surrogate )! );
 
             switch ( Type.GetTypeCode ( type ) )
             {
@@ -48,7 +48,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
                 if ( length == -1 )
                     return null;
 
-                var elementType = type.GetElementType ( );
+                var elementType = type.GetElementType ( )!;
                 var array       = Array.CreateInstance ( elementType, length );
                 for ( var index = 0; index < array.Length; index++ )
                     array.SetValue ( reader.Read ( elementType, surrogate ), index );

@@ -2,10 +2,6 @@
 
   <Import Project="..\Directory.Build.props" />
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.0.0" PrivateAssets="all" />
-  </ItemGroup>
-
   <PropertyGroup>
     <!-- CA1034: Nested types should not be visible (but are used in unit tests) -->
     <NoWarn>$(NoWarn);CA1034</NoWarn>

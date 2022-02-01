@@ -54,7 +54,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
             var typeFields = type.GetFields ( BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
             var parentType = type.BaseType;
 
-            if ( ! parentType.HasBaseClass ( ) && typeFields.AreAllSerializable ( ) )
+            if ( parentType != null && ! parentType.HasBaseClass ( ) && typeFields.AreAllSerializable ( ) )
                 return typeFields;
 
             var fields = new List < MemberInfo > ( typeFields.Length );
@@ -63,7 +63,7 @@ namespace EntityFrameworkCore.Serialization.Binary.Format
                 if ( field.IsSerializable ( ) )
                     fields.Add ( field );
 
-            while ( parentType.HasBaseClass ( ) )
+            while ( parentType != null && parentType.HasBaseClass ( ) )
             {
                 foreach ( var field in parentType.GetFields ( BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly ) )
                     if ( field.IsSerializable ( ) )

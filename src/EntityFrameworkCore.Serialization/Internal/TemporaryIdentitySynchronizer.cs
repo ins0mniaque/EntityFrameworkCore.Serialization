@@ -49,7 +49,7 @@ namespace EntityFrameworkCore.Serialization.Internal
             {
                 var propertyType = propertyEntry.Metadata.ClrType;
                 if ( ! defaultValueCache.TryGetValue ( propertyType, out var defaultValue ) )
-                    defaultValueCache [ propertyType ] = defaultValue = Activator.CreateInstance ( propertyType );
+                    defaultValueCache [ propertyType ] = defaultValue = Activator.CreateInstance ( propertyType )!;
 
                 return comparer.Compare ( propertyEntry.CurrentValue, defaultValue ) < 0;
             }
@@ -73,14 +73,12 @@ namespace EntityFrameworkCore.Serialization.Internal
 
         private class Generator
         {
-            private static InternalEntityEntryFactory factory = new InternalEntityEntryFactory ( );
-
             public Generator ( DbContext dbContext, IEntityType entityType )
             {
                 StateManager = dbContext.GetDependencies ( ).StateManager;
                 EntityType   = entityType;
-                Key          = entityType.FindPrimaryKey ( );
-                Entity       = Activator.CreateInstance ( entityType.ClrType );
+                Key          = entityType.FindPrimaryKey ( ) ?? throw new InvalidOperationException ( );
+                Entity       = Activator.CreateInstance ( entityType.ClrType )!;
                 PrimaryKey   = GenerateNextPrimaryKey ( );
             }
 
@@ -89,13 +87,13 @@ namespace EntityFrameworkCore.Serialization.Internal
             private IKey          Key          { get; }
             private object        Entity       { get; }
 
-            public Dictionary < IProperty, object > PrimaryKey { get; private set; }
+            public Dictionary < IProperty, object? > PrimaryKey { get; private set; }
 
             public void Next ( ) => PrimaryKey = GenerateNextPrimaryKey ( );
 
-            private Dictionary < IProperty, object > GenerateNextPrimaryKey ( )
+            private Dictionary < IProperty, object? > GenerateNextPrimaryKey ( )
             {
-                var entry = factory.Create ( StateManager, EntityType, Entity );
+                var entry = new InternalEntityEntry ( StateManager, EntityType, Entity );
 
                 StateManager.ValueGenerationManager.Generate  ( entry );
                 StateManager.ValueGenerationManager.Propagate ( entry );

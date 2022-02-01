@@ -66,7 +66,8 @@ namespace EntityFrameworkCore.Serialization.Diagnostics
                 return false;
             }
 
-            property = EnsureEntityType ( ).FindProperty ( Property.Current.Key );
+            property = EnsureEntityType ( ).FindProperty ( Property.Current.Key ) ??
+                       throw new KeyNotFoundException ( $"Property { Property.Current.Key } was not found in model" );
             value    = Property.Current.Value;
             return true;
         }
@@ -83,7 +84,8 @@ namespace EntityFrameworkCore.Serialization.Diagnostics
                 return false;
             }
 
-            property = EnsureEntityType ( ).FindProperty ( ModifiedProperties.Current.Key );
+            property = EnsureEntityType ( ).FindProperty ( ModifiedProperties.Current.Key ) ??
+                       throw new KeyNotFoundException ( $"Property { ModifiedProperties.Current.Key } was not found in model" );
             value    = ModifiedProperties.Current.Value;
             return true;
         }
@@ -99,7 +101,8 @@ namespace EntityFrameworkCore.Serialization.Diagnostics
                 return false;
             }
 
-            navigated = EnsureEntityType ( ).FindNavigation ( NavigationState.Current );
+            navigated = EnsureEntityType ( ).FindNavigation ( NavigationState.Current ) ??
+                        throw new KeyNotFoundException ( $"Navigation { NavigationState.Current } was not found in model" );
             return true;
         }
     }
