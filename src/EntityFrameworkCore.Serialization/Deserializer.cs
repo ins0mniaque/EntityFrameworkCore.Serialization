@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
@@ -155,9 +154,16 @@ namespace EntityFrameworkCore.Serialization
         {
             var propertyEntry = entityEntry.Property ( property );
 
-            propertyEntry.OriginalValue = value;
-            propertyEntry.CurrentValue  = value;
-            propertyEntry.IsModified    = false;
+            if ( TemporaryIdentitySynchronizer.IsTemporaryValue ( propertyEntry, value ) )
+            {
+                TemporaryIdentitySynchronizer.SetTemporaryValue ( propertyEntry, value );
+            }
+            else
+            {
+                propertyEntry.OriginalValue = value;
+                propertyEntry.CurrentValue  = value;
+                propertyEntry.IsModified    = false;
+            }
 
             return propertyEntry;
         }

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EntityFrameworkCore.Serialization.Internal
@@ -23,10 +24,8 @@ namespace EntityFrameworkCore.Serialization.Internal
             if ( propertyEntry == null )
                 throw new ArgumentNullException ( nameof ( propertyEntry ) );
 
-            if ( ! propertyEntry.Metadata.IsPrimaryKey ( ) || ! HasTemporaryValue ( propertyEntry ) )
+            if ( ! propertyEntry.Metadata.IsPrimaryKey ( ) || ! propertyEntry.IsTemporary )
                 return;
-
-            propertyEntry.IsTemporary = true;
 
             var entityType = propertyEntry.EntityEntry.Metadata;
             if ( ! generators.TryGetValue ( entityType, out var generator ) )
@@ -43,21 +42,32 @@ namespace EntityFrameworkCore.Serialization.Internal
             }
         }
 
-        private static bool HasTemporaryValue ( PropertyEntry propertyEntry )
+        public static bool IsTemporaryValue ( PropertyEntry propertyEntry, object? value )
         {
+            if ( propertyEntry == null )
+                throw new ArgumentNullException ( nameof ( propertyEntry ) );
+
             if ( MayGetTemporaryValue ( propertyEntry ) )
             {
                 var propertyType = propertyEntry.Metadata.ClrType;
                 if ( ! defaultValueCache.TryGetValue ( propertyType, out var defaultValue ) )
                     defaultValueCache [ propertyType ] = defaultValue = Activator.CreateInstance ( propertyType )!;
 
-                return comparer.Compare ( propertyEntry.CurrentValue, defaultValue ) < 0;
+                return comparer.Compare ( value, defaultValue ) < 0;
             }
 
             return false;
         }
 
         #pragma warning disable EF1001 // Internal EF Core API usage.
+        public static void SetTemporaryValue ( PropertyEntry propertyEntry, object? value )
+        {
+            if ( propertyEntry == null )
+                throw new ArgumentNullException ( nameof ( propertyEntry ) );
+
+            propertyEntry.GetInfrastructure ( ).SetTemporaryValue ( propertyEntry.Metadata, value, false );
+        }
+
         private static bool MayGetTemporaryValue ( PropertyEntry propertyEntry )
         {
             var valueGeneration = propertyEntry.EntityEntry.Context.GetDependencies ( ).StateManager.ValueGenerationManager;
