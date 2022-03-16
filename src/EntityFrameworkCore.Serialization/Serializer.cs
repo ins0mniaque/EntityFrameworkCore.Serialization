@@ -100,9 +100,14 @@ namespace EntityFrameworkCore.Serialization
 
         private class Snapshot
         {
+            private readonly DbContext context;
+            private readonly object    entity;
+
             public Snapshot ( EntityEntry entityEntry )
             {
-                EntityEntry = entityEntry;
+                context = entityEntry.Context;
+                entity  = entityEntry.Entity;
+
                 EntityState = entityEntry.State;
                 Properties  = entityEntry.Properties
                                          .Where  ( property => property.Metadata.IsPrimaryKey ( ) ||
@@ -111,7 +116,7 @@ namespace EntityFrameworkCore.Serialization
                                                          property => (object?) property.CurrentValue );
             }
 
-            public EntityEntry EntityEntry { get; }
+            public EntityEntry EntityEntry => context.Entry ( entity );
             public EntityState EntityState { get; }
             public Dictionary < IProperty, object? > Properties { get; }
         }
