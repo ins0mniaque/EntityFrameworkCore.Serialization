@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace EntityFrameworkCore.Serialization.Internal
 {
@@ -70,15 +72,21 @@ namespace EntityFrameworkCore.Serialization.Internal
 
         private static bool MayGetTemporaryValue ( PropertyEntry propertyEntry )
         {
-            var valueGeneration = propertyEntry.EntityEntry.Context.GetDependencies ( ).StateManager.ValueGenerationManager;
-            if ( valueGeneration.MayGetTemporaryValue ( propertyEntry.Metadata, propertyEntry.Metadata.DeclaringEntityType ) )
+            var valueGeneratorSelector = propertyEntry.EntityEntry.Context.GetService < IValueGeneratorSelector > ( );
+            if ( MayGetTemporaryValue ( valueGeneratorSelector, propertyEntry.Metadata, propertyEntry.Metadata.DeclaringEntityType ) )
                 return true;
 
             var principal = propertyEntry.Metadata.FindFirstPrincipal ( );
             if ( principal == null )
                 return false;
 
-            return valueGeneration.MayGetTemporaryValue ( principal, principal.DeclaringEntityType );
+            return MayGetTemporaryValue ( valueGeneratorSelector, principal, principal.DeclaringEntityType );
+        }
+
+        private static bool MayGetTemporaryValue ( IValueGeneratorSelector valueGeneratorSelector, IProperty property, IEntityType entityType )
+        {
+            return property.RequiresValueGenerator ( ) &&
+                   valueGeneratorSelector.Select ( property, entityType ).GeneratesTemporaryValues;
         }
 
         private class Generator
