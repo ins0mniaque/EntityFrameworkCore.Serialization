@@ -152,7 +152,7 @@ namespace EntityFrameworkCore.Serialization
             writer.WriteEntityState ( state );
 
             var properties         = entityEntry.Properties.ToList ( );
-            var writeAllProperties = mode == SerializationMode.Full && state != EntityState.Deleted || state == EntityState.Added;
+            var writeAllProperties = mode == SerializationMode.Full || state == EntityState.Added;
 
             if ( originalValues != null )
             {
